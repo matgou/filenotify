@@ -24,8 +24,8 @@
  *
  * One file by parameter
  */
-#include "log.h"
-#include "config.h"
+#include <log.h>
+#include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -57,11 +57,11 @@ log_msg(char *tag, char* msg, ...)
 	strcat(format, msg);
 	strcat(format, end);
   	va_list args;
-	va_start (args, format);
+	va_start (args, msg);
 	
 	vfprintf(stdout, format, args );
 	va_end (args);
-	va_start (args, format);
+	va_start (args, msg);
 
 	if(logFilePointer == NULL)
 	{

@@ -28,9 +28,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <ctype.h>
-#include "filenotify.h"
-#include "config.h"
-#include "log.h"
+#include <filenotify.h>
+#include <config.h>
+#include <log.h>
 
 
 /**

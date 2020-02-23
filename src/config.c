@@ -24,8 +24,8 @@
  *
  * One file by parameter
  */
-#include "config.h"
-#include "log.h"
+#include <config.h>
+#include <log.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
