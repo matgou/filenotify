@@ -82,7 +82,6 @@ static void handle_events(int fd, int *wd)
              __attribute__ ((aligned(__alignof__(struct inotify_event))));
 	const struct inotify_event *event;
 	int i;
-	char *type;
 	char *isdir;
 	ssize_t len;
 	char *ptr;
@@ -107,6 +106,7 @@ static void handle_events(int fd, int *wd)
 		for (ptr = buf; ptr < buf + len;
 		     ptr += sizeof(struct inotify_event) + event->len) {
 			event = (const struct inotify_event *) ptr;
+			char *type;
 
 			/* Print event type */
                    	if (event->mask & IN_OPEN) {
@@ -117,6 +117,9 @@ static void handle_events(int fd, int *wd)
 			}
 			if (event->mask & IN_CLOSE_WRITE) {
 				type="IN_CLOSE_WRITE: ";
+			}
+			if (event->mask & IN_DELETE) {
+				type="IN_DELETE: ";
 			}
 
 			/* Print type of filesystem object */
@@ -152,7 +155,7 @@ int mainLoop()
 		log_msg("ERROR", "Error while init inotify : ", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
-	wd = inotify_add_watch(fd, "/tmp", IN_OPEN | IN_CLOSE);
+	wd = inotify_add_watch(fd, "/tmp", IN_CLOSE | IN_DELETE );
 	if(wd  == -1) {
 		log_msg("ERROR", "Cannot watch /tmp : %s", strerror(errno));
 		exit(EXIT_FAILURE);
