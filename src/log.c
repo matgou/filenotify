@@ -16,13 +16,63 @@
 *   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA         *
 *   02111-1307 USA.                                                           *
 ******************************************************************************/
-#ifndef filenotify_h
-#define filenotify_h
+/**
+ * \file log.c
+ * \brief Function to log
+ * \author Goulin.M
+ * \version 0.1
+ *
+ * One file by parameter
+ */
+#include "log.h"
+#include "config.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
+#include <time.h>
 
 
-// Function list
-int main(int argc, char *argv[]);
-void displayWelcome();
-void displayHelp();
+/**
+ * \fn int log_msg()
+ * \brief Display line on stdout and logfile
+ * \return 0 in case of success
+ */
+int
+log_msg(char *tag, char* msg, ...)
+{
+	char *separator=" : ";
+	char *end="\n";
 
-#endif
+	time_t curtime = time(0);
+	char *timeString=ctime(&curtime);
+	timeString[strlen(timeString)-1]='\0';
+	int message_len = strlen(msg) + 1 + strlen(tag) + strlen(timeString) + strlen(separator)*2 + strlen(end);
+	char *format = (char*) malloc(message_len * sizeof(char));
+	
+	strcpy(format, timeString);
+	strcat(format, separator);
+	strcat(format, tag);
+	strcat(format, separator);
+	strcat(format, msg);
+	strcat(format, end);
+  	va_list args;
+	va_start (args, format);
+	
+	vfprintf(stdout, format, args );
+	va_end (args);
+	va_start (args, format);
+
+	if(logFilePointer == NULL)
+	{
+		logFilePointer=fopen(get_config("logfile"), "a+");
+	}
+	if(logFilePointer != NULL)
+	{
+		vfprintf(logFilePointer, format, args );
+	}
+	
+	va_end (args);
+	free(format);
+	return 0;
+}

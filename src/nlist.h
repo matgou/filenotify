@@ -16,13 +16,23 @@
 *   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA         *
 *   02111-1307 USA.                                                           *
 ******************************************************************************/
-#ifndef filenotify_h
-#define filenotify_h
+#ifndef nlist_h
+#define nlist_h
 
+struct nlist { /* table entry: */
+    struct nlist *next; /* next entry in chain */
+    char *name; /* defined name */
+    char *defn; /* replacement text */
+};
 
-// Function list
-int main(int argc, char *argv[]);
-void displayWelcome();
-void displayHelp();
+#define HASHSIZE 101
+// Usage : static struct nlist *hashtab[HASHSIZE];
+
+/* hash: form hash value for string s */
+unsigned hash(char *s);
+
+/* lookup: look for s in hashtab */
+struct nlist *lookup(struct nlist *list[], char *s);
+struct nlist *install(struct nlist *list[], char *name, char *defn);
 
 #endif

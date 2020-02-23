@@ -16,13 +16,11 @@
 *   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA         *
 *   02111-1307 USA.                                                           *
 ******************************************************************************/
-#ifndef filenotify_h
-#define filenotify_h
+#ifndef log_h
+#define log_h
+#include <stdio.h>
 
-
-// Function list
-int main(int argc, char *argv[]);
-void displayWelcome();
-void displayHelp();
+FILE *logFilePointer;
+int log_msg (char *tag, char *msg, ...);
 
 #endif

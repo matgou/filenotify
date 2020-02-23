@@ -16,13 +16,19 @@
 *   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA         *
 *   02111-1307 USA.                                                           *
 ******************************************************************************/
-#ifndef filenotify_h
-#define filenotify_h
+#ifndef config_h
+#define config_h
+#include "nlist.h"
 
+#define CONFIG_DIR "etc/"
+#define TAILLE_MAX 1000
 
-// Function list
-int main(int argc, char *argv[]);
-void displayWelcome();
-void displayHelp();
+static struct nlist *config[HASHSIZE];
+
+int loadConfig (char *configFilePath);
+void freeconfig ();
+struct nlist *save_config(char *key, char* value);
+char *get_config(char *key);
+void display_allconfig(struct nlist *list[]);
 
 #endif

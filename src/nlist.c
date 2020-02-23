@@ -16,13 +16,57 @@
 *   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA         *
 *   02111-1307 USA.                                                           *
 ******************************************************************************/
-#ifndef filenotify_h
-#define filenotify_h
+#include "stdio.h"
+#include "stdlib.h"
+#include "nlist.h"
+#include "string.h"
 
+/**
+ * \fn unsigned hash()
+ * \brief form hash value for string s
+ * \return hash int
+ */
+unsigned hash(char *s)
+{
+    unsigned hashval;
+    for (hashval = 0; *s != '\0'; s++)
+      hashval = *s + 31 * hashval;
+    return hashval % HASHSIZE;
+}
 
-// Function list
-int main(int argc, char *argv[]);
-void displayWelcome();
-void displayHelp();
+/**
+ * \fn unsigned lookup()
+ * \brief look for s in hashtab
+ * \return list element
+ */
+struct nlist *lookup(struct nlist *list[], char *s)
+{
+    struct nlist *np;
+    for (np = list[hash(s)]; np != NULL; np = np->next)
+        if (strcmp(s, np->name) == 0)
+          return np; /* found */
+    return NULL; /* not found */
+}
 
-#endif
+/**
+ * \fn nlist install(char *name, char *defn)
+ * \brief install: put (name, defn) in hashtab
+ * \return 
+ */
+struct nlist *install(struct nlist *list[], char *name, char *defn)
+{
+    struct nlist *np;
+    unsigned hashval;
+    if ((np = lookup(list, name)) == NULL) { /* not found */
+        np = (struct nlist *) malloc(sizeof(*np));
+        if (np == NULL || (np->name = strdup(name)) == NULL)
+          return NULL;
+        hashval = hash(name);
+        np->next = list[hashval];
+        list[hashval] = np;
+    } else /* already there */
+        free((void *) np->defn); /*free previous defn */
+    if ((np->defn = strdup(defn)) == NULL)
+       return NULL;
+    return np;
+}

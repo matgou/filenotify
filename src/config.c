@@ -17,78 +17,97 @@
 *   02111-1307 USA.                                                           *
 ******************************************************************************/
 /**
- * \file filenotify.c
- * \brief Programme de surveillance de fichier et de notification
+ * \file config.c
+ * \brief Function to manipulate configuration.
  * \author Goulin.M
  * \version 0.1
- * \date 2019/02/22
  *
+ * One file by parameter
  */
-#include <sys/inotify.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <ctype.h>
-#include "filenotify.h"
 #include "config.h"
 #include "log.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
-
-/**
- * \fn void displayHelp()
- * \brief Display help page 
- *
- */
-void
-displayHelp ()
+struct nlist *
+save_config(char *key, char* value)
 {
-	fprintf(stdout, "Usage : filenotify -c [config] \n");
-	fprintf(stdout, "Options :\n");
-	fprintf(stdout, "  -c [config]                        Configuration file\n");
+	return install(config, key, value);	
 }
 
 /**
- * \fn void displayWelcome()
- * \brief Function to say the welcome banner
- *
+ * \fn get_config()
+ * \brief return an element in config
+ * \return char* value from key
  */
-void
-displayWelcome ()
+char *
+get_config(char *key)
 {
-	log_msg("INFO", " *** Welcome in filenotifier *** ");
+	struct nlist *ptr = lookup(config, key);
+	if(ptr != NULL)
+	{
+		return ptr->defn;
+	}
+	return NULL;
 }
 
 /**
- * \fn int main ()
- * \brief entry of the filenotify process
+ * \fn void loadConfig()
+ * \brief display all config in memory
  */
-int main(int argc, char *argv[])
+void
+display_allconfig(struct nlist *list[])
 {
-	int c;
-	char *configFilePath = NULL;
-
-	while ((c = getopt (argc, argv, "c:")) != -1)
-		switch (c)
+	struct nlist *np;
+	for (int i = 0; i < HASHSIZE; i++)
+	{
+		for (np = list[i]; np != NULL; np = np->next)
 		{
-      			case 'c':
-        			configFilePath = optarg;
-				break;
-			case '?':
-				if (optopt == 'c') {
-					fprintf (stderr, "Option -%c requires an argument.\n", optopt);
-					displayHelp();
-                                        return 255;
-				} else if (isprint (optopt)) {
-					fprintf (stderr, "Unknown option `-%c'.\n", optopt);
-				} else {
-					fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
-					displayHelp();
-					return 255;
-				}
+			log_msg("INFO", " Config : %s=%s ", np->name, np->defn);
 		}
-	if(loadConfig(configFilePath) != 0) {
-		fprintf (stderr, "Critical error while loading config, exit\n");
+	}
+}
+
+/**
+ * \fn int loadConfig()
+ * \brief load all config file in config structure
+ * \return 1 in case of success
+ */
+int
+loadConfig (char *configFilePath)
+{
+	FILE *configFile = NULL;
+	configFile = fopen(configFilePath,  "r");
+	char configLine[TAILLE_MAX] = "";
+ 
+	if (configFile == NULL) {
+		log_msg("ERROR", "Failed to open config file : %s", configFilePath);
 		return 255;
 	}
-	
-	displayWelcome();
+
+	while (fgets(configLine, TAILLE_MAX, configFile) != NULL)
+	{
+		if(configLine[0]=='#')
+		{
+			continue;
+		}
+		char end=configLine[strlen(configLine)-1];
+		if(end == '\n') {
+			configLine[strlen(configLine)-1] = '\0';
+		}
+		char *value = strchr(configLine, '=');
+		if(value != NULL)
+		{
+			value[0]='\0';
+			// on enleve le =
+			value = value+1;
+			save_config(configLine, value);
+		}
+	}
+
+	fclose(configFile);
+	display_allconfig(config);
+
+	return 0;
 }
