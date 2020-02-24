@@ -83,7 +83,6 @@ static void handle_events(int fd, int n_watch_directories, struct directory *dir
 	const struct inotify_event *event;
 	char *isdir;
 	ssize_t len;
-	int i;
 	char *ptr;
 
         /* Loop while events can be read from inotify file descriptor. */
@@ -106,6 +105,7 @@ static void handle_events(int fd, int n_watch_directories, struct directory *dir
 		for (ptr = buf; ptr < buf + len;
 		     ptr += sizeof(struct inotify_event) + event->len) {
 			event = (const struct inotify_event *) ptr;
+			log_msg("DEBUG", "event inotify from descriptor %i", event->wd);
 			char *type;
 			char *dirname;
 
@@ -122,9 +122,10 @@ static void handle_events(int fd, int n_watch_directories, struct directory *dir
 			if (event->mask & IN_DELETE) {
 				type="IN_DELETE: ";
 			}
-
-			for (i = 1; i < n_watch_directories; ++i) {
+			
+			for (int i = 0; i < n_watch_directories; ++i) {
 				if (directories[i].wd == event->wd) {
+					log_msg("DEBUG", "dirname=%s descriptor=%i = %i", directories[i].name, directories[i].wd, event->wd);
 					dirname = directories[i].name;
 					break;
 				}
@@ -178,8 +179,10 @@ int mainLoop()
 			directories[n_watch_directories - 1].wd = inotify_add_watch(fd, np->defn, IN_CLOSE | IN_DELETE );
 			directories[n_watch_directories - 1].name = np->defn;
 			if(directories[n_watch_directories - 1].wd  == -1) {
-				log_msg("ERROR", "Cannot watch /tmp : %s", strerror(errno));
+				log_msg("ERROR", "Cannot watch %s : %s", np->defn, strerror(errno));
 				exit(EXIT_FAILURE);
+			} else {
+				log_msg("DEBUG", "inotify descriptor=%i for directory %s/", directories[n_watch_directories - 1].wd, np->defn);
 			}
 		}
 	}
