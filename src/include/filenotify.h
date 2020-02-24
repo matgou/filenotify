@@ -21,8 +21,9 @@
 
 
 struct directory { /* table entry: */
-    char *name; /* defined name */
-    int wd;
+	char *name; /* directory name */
+	char *key;  /* directory key */
+	int wd;     /* inotify descriptor */
 };
 
 // Function list

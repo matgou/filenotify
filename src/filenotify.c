@@ -108,25 +108,27 @@ static void handle_events(int fd, int n_watch_directories, struct directory *dir
 			log_msg("DEBUG", "event inotify from descriptor %i", event->wd);
 			char *type;
 			char *dirname;
+			char *key;
 
 			/* Print event type */
                    	if (event->mask & IN_OPEN) {
-				type="IN_OPEN: ";
+				type="IN_OPEN";
 			}
 			if (event->mask & IN_CLOSE_NOWRITE) {
-				type="IN_CLOSE_NOWRITE: ";
+				type="IN_CLOSE_NOWRITE";
 			}
 			if (event->mask & IN_CLOSE_WRITE) {
-				type="IN_CLOSE_WRITE: ";
+				type="IN_CLOSE_WRITE";
 			}
 			if (event->mask & IN_DELETE) {
-				type="IN_DELETE: ";
+				type="IN_DELETE";
 			}
 			
 			for (int i = 0; i < n_watch_directories; ++i) {
 				if (directories[i].wd == event->wd) {
 					log_msg("DEBUG", "dirname=%s descriptor=%i = %i", directories[i].name, directories[i].wd, event->wd);
 					dirname = directories[i].name;
+					key = directories[i].key;
 					break;
 				}
 			}
@@ -138,9 +140,9 @@ static void handle_events(int fd, int n_watch_directories, struct directory *dir
 				isdir=" [file]";
 			}
 			if (event->len) {
-				log_msg("INFO", "%s %s/%s %s", type, dirname, event->name, isdir);
+				log_msg("INFO", "[%s] %s : %s/%s %s", type, key, dirname, event->name, isdir);
 			} else {
-				log_msg("INFO", "%s %s/ %s", type, dirname, isdir);
+				log_msg("INFO", "[%s] %s : %s/ %s", type, key, dirname, isdir);
 			}
 		}
 	}
@@ -152,8 +154,7 @@ static void handle_events(int fd, int n_watch_directories, struct directory *dir
  */
 int mainLoop()
 {
-	char buf;
-	int fd, i, poll_num;
+	int fd;
 	nfds_t nfds;
 	struct pollfd fds[2];
 	struct directory *directories;
@@ -178,6 +179,7 @@ int mainLoop()
 			directories = (struct directory *) realloc(directories, sizeof(struct directory) * n_watch_directories);
 			directories[n_watch_directories - 1].wd = inotify_add_watch(fd, np->defn, IN_CLOSE | IN_DELETE );
 			directories[n_watch_directories - 1].name = np->defn;
+			directories[n_watch_directories - 1].key = np->name;
 			if(directories[n_watch_directories - 1].wd  == -1) {
 				log_msg("ERROR", "Cannot watch %s : %s", np->defn, strerror(errno));
 				exit(EXIT_FAILURE);
