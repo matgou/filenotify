@@ -40,7 +40,6 @@
 int
 displayLog(char *tag)
 {
-	return 0;
 	if(strcmp("DEBUG", get_config("loglevel"))==0) {
 		return 1;
 	}
@@ -98,6 +97,7 @@ log_msg(char *tag, char* msg, ...)
 	{
 		vfprintf(logFilePointer, format, args );
 	}
+	fflush(logFilePointer);
 	
 	va_end (args);
 	free(format);
