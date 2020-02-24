@@ -78,8 +78,8 @@ display_allconfig(struct nlist *list[])
 struct nlist **
 get_configs(struct nlist *list[], char *prefix)
 {
-	struct nlist **configs;
-	configs  = malloc(HASHSIZE * sizeof(struct nlist));
+	static struct nlist *configs[HASHSIZE];
+	//configs  = malloc(HASHS!IZE * sizeof(struct nlist *));
 	struct nlist *np;
 
 	for (int i = 0; i < HASHSIZE; i++)
@@ -90,7 +90,7 @@ get_configs(struct nlist *list[], char *prefix)
 				char *new_name=np->name + sizeof(char)*strlen(prefix);
 				install(configs, new_name, np->defn);
 			}
-        	}
+        }
 	}
 
 	return configs;

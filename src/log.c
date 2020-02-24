@@ -34,6 +34,30 @@
 
 
 /**
+ * \fn int displayLog()
+ * \brief verify if loglevel is more than tag level
+ */
+int
+displayLog(char *tag)
+{
+	return 0;
+	if(strcmp("DEBUG", get_config("loglevel"))==0) {
+		return 1;
+	}
+	if(strcmp("INFO", get_config("loglevel")) == 0) {
+		if(strcmp(tag, "DEBUG")==0) {
+			return 0;
+		} else {
+			return 1;
+		}
+	}
+	if(strcmp("ERROR", tag)==0) {
+		return 1;
+	}
+	return 0;
+}
+
+/**
  * \fn int log_msg()
  * \brief Display line on stdout and logfile
  * \return 0 in case of success
@@ -41,6 +65,9 @@
 int
 log_msg(char *tag, char* msg, ...)
 {
+	if(!displayLog(tag)) {
+		return 0;
+	}
 	char *separator=" : ";
 	char *end="\n";
 

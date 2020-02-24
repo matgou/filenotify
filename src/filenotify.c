@@ -123,7 +123,7 @@ static void handle_events(int fd, int n_watch_directories, struct directory *dir
 			if (event->mask & IN_DELETE) {
 				type="IN_DELETE";
 			}
-			
+
 			for (int i = 0; i < n_watch_directories; ++i) {
 				if (directories[i].wd == event->wd) {
 					log_msg("DEBUG", "dirname=%s descriptor=%i = %i", directories[i].name, directories[i].wd, event->wd);
