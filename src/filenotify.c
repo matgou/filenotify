@@ -40,7 +40,7 @@
 
 /**
  * \fn void displayHelp()
- * \brief Display help page 
+ * \brief Display help page
  *
  */
 void
@@ -70,7 +70,7 @@ displayWelcome ()
  *        argv is the list of watched directories.
  *        Entry 0 of wd and argv is unused.
  */
-static void handle_events(int fd, int *wd)
+static void handle_events(int fd, int n_watch_directories, struct directory *directories)
 {
 	/* Some systems cannot read integer variables if they are not
            properly aligned. On other systems, incorrect alignment may
@@ -81,9 +81,9 @@ static void handle_events(int fd, int *wd)
 	char buf[4096]
              __attribute__ ((aligned(__alignof__(struct inotify_event))));
 	const struct inotify_event *event;
-	int i;
 	char *isdir;
 	ssize_t len;
+	int i;
 	char *ptr;
 
         /* Loop while events can be read from inotify file descriptor. */
@@ -107,6 +107,7 @@ static void handle_events(int fd, int *wd)
 		     ptr += sizeof(struct inotify_event) + event->len) {
 			event = (const struct inotify_event *) ptr;
 			char *type;
+			char *dirname;
 
 			/* Print event type */
                    	if (event->mask & IN_OPEN) {
@@ -122,6 +123,13 @@ static void handle_events(int fd, int *wd)
 				type="IN_DELETE: ";
 			}
 
+			for (i = 1; i < n_watch_directories; ++i) {
+				if (directories[i].wd == event->wd) {
+					dirname = directories[i].name;
+					break;
+				}
+			}
+
 			/* Print type of filesystem object */
 			if (event->mask & IN_ISDIR) {
 				isdir=" [directory]";
@@ -129,9 +137,9 @@ static void handle_events(int fd, int *wd)
 				isdir=" [file]";
 			}
 			if (event->len) {
-				log_msg("INFO", "%s %s %s", type, event->name, isdir);
+				log_msg("INFO", "%s %s/%s %s", type, dirname, event->name, isdir);
 			} else {
-				log_msg("INFO", "%s %s", type, isdir);
+				log_msg("INFO", "%s %s/ %s", type, dirname, isdir);
 			}
 		}
 	}
@@ -140,14 +148,17 @@ static void handle_events(int fd, int *wd)
 /**
  * \fn int mainLoop()
  * \brief main loop of programme
- */ 
+ */
 int mainLoop()
 {
 	char buf;
 	int fd, i, poll_num;
-	int *wd;
 	nfds_t nfds;
 	struct pollfd fds[2];
+	struct directory *directories;
+	int n_watch_directories=0;
+	struct nlist **watch_directories;
+	struct nlist *np;
 
 	/* Create the file descriptor for accessing the inotify API */
 	fd = inotify_init1(IN_NONBLOCK);
@@ -155,11 +166,25 @@ int mainLoop()
 		log_msg("ERROR", "Error while init inotify : ", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
-	wd = inotify_add_watch(fd, "/tmp", IN_CLOSE | IN_DELETE );
-	if(wd  == -1) {
-		log_msg("ERROR", "Cannot watch /tmp : %s", strerror(errno));
-		exit(EXIT_FAILURE);
+
+	/* determine all directory to watch */
+	watch_directories=get_configs(config, "watch_directory.");
+	for (int i = 0; i < HASHSIZE; i++)
+	{
+		for (np = watch_directories[i]; np != NULL; np = np->next)
+		{
+			n_watch_directories++;
+			directories = (struct directory *) realloc(directories, sizeof(struct directory) * n_watch_directories);
+			directories[n_watch_directories - 1].wd = inotify_add_watch(fd, np->defn, IN_CLOSE | IN_DELETE );
+			directories[n_watch_directories - 1].name = np->defn;
+			if(directories[n_watch_directories - 1].wd  == -1) {
+				log_msg("ERROR", "Cannot watch /tmp : %s", strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+		}
 	}
+
+
 
 	/* Prepare for polling */
 	nfds = 1;
@@ -181,13 +206,12 @@ int mainLoop()
 		if (poll_num > 0) {
 			if (fds[0].revents & POLLIN) {
 				/* Inotify events are available */
-				handle_events(fd, wd);
+				handle_events(fd, n_watch_directories, directories);
                    	}
                }
 
 	}
-	close(wd);
-	free(wd);
+	free(directories);
 	return EXIT_SUCCESS;
 }
 
@@ -230,7 +254,8 @@ int main(int argc, char *argv[])
 		displayHelp();
 		return 255;
 	}
-	
+	display_allconfig(config);
+
 	displayWelcome();
 	return mainLoop();
 }

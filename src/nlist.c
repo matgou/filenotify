@@ -42,16 +42,18 @@ unsigned hash(char *s)
 struct nlist *lookup(struct nlist *list[], char *s)
 {
     struct nlist *np;
-    for (np = list[hash(s)]; np != NULL; np = np->next)
-        if (strcmp(s, np->name) == 0)
-          return np; /* found */
+    for (np = list[hash(s)]; np != NULL; np = np->next) {
+        if (strcmp(s, np->name) == 0) {
+            return np; /* found */
+        }
+    }
     return NULL; /* not found */
 }
 
 /**
  * \fn nlist install(char *name, char *defn)
  * \brief install: put (name, defn) in hashtab
- * \return 
+ * \return
  */
 struct nlist *install(struct nlist *list[], char *name, char *defn)
 {

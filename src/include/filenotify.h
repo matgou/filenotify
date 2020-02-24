@@ -20,9 +20,17 @@
 #define filenotify_h
 
 
+struct directory { /* table entry: */
+    char *name; /* defined name */
+    int wd;
+};
+
 // Function list
 int main(int argc, char *argv[]);
 void displayWelcome();
 void displayHelp();
+static void handle_events(int fd, int n_watch_directories, struct directory *directories);
+int mainLoop();
+
 
 #endif

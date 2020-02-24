@@ -33,7 +33,7 @@
 struct nlist *
 save_config(char *key, char* value)
 {
-	return install(config, key, value);	
+	return install(config, key, value);
 }
 
 /**
@@ -64,9 +64,36 @@ display_allconfig(struct nlist *list[])
 	{
 		for (np = list[i]; np != NULL; np = np->next)
 		{
-			log_msg("INFO", " Config : %s=%s ", np->name, np->defn);
+			if(np != NULL) {
+				log_msg("INFO", " Config : %s=%s ", np->name, np->defn);
+			}
 		}
 	}
+}
+
+/**
+ * \fn void get_configs()
+ * \brief return list of config who contains prefix
+ */
+struct nlist **
+get_configs(struct nlist *list[], char *prefix)
+{
+	struct nlist **configs;
+	configs  = malloc(HASHSIZE * sizeof(struct nlist));
+	struct nlist *np;
+
+	for (int i = 0; i < HASHSIZE; i++)
+	{
+		for (np = list[i]; np != NULL; np = np->next)
+		{
+			if(strncmp(np->name, prefix, strlen(prefix)) == 0) {
+				char *new_name=np->name + sizeof(char)*strlen(prefix);
+				install(configs, new_name, np->defn);
+			}
+        	}
+	}
+
+	return configs;
 }
 
 /**
@@ -80,7 +107,7 @@ loadConfig (char *configFilePath)
 	FILE *configFile = NULL;
 	configFile = fopen(configFilePath,  "r");
 	char configLine[TAILLE_MAX] = "";
- 
+
 	if (configFile == NULL) {
 		log_msg("ERROR", "Failed to open config file : %s", configFilePath);
 		return 255;
@@ -107,7 +134,6 @@ loadConfig (char *configFilePath)
 	}
 
 	fclose(configFile);
-	display_allconfig(config);
 
 	return 0;
 }
