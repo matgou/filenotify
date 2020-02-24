@@ -14,3 +14,6 @@ clean:
 
 mrproper: clean
 	rm -fv bin/$(EXEC)
+
+check:
+	make -C test
