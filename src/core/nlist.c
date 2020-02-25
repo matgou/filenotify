@@ -44,6 +44,9 @@ struct nlist *lookup(struct nlist *list[], char *s)
     struct nlist *np;
     for (np = list[hash(s)]; np != NULL; np = np->next) {
         if (np != NULL) {
+            if(np->name == 0) {
+                continue;
+            }
             if (strcmp(s, np->name) == 0) {
                 return np; /* found */
             }

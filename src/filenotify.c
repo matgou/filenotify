@@ -71,7 +71,7 @@ displayWelcome ()
  *        argv is the list of watched directories.
  *        Entry 0 of wd and argv is unused.
  */
-static void handle_events(int fd, int n_watch_directories, struct directory *directories)
+void handle_events(int fd, int n_watch_directories, struct directory *directories)
 {
 	/* Some systems cannot read integer variables if they are not
            properly aligned. On other systems, incorrect alignment may

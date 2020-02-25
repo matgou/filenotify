@@ -2,7 +2,7 @@
 # 
 CC=gcc
 CFLAGS=-W -Wall -fPIC -I./include -ggdb  
-LFLAGS=-D_GNU_SOURCE=1 -ldl
+LFLAGS=-D_GNU_SOURCE=1 -ldl -lcurl
 
 EXEC=../bin/filenotify
 SRC= $(wildcard *.c)

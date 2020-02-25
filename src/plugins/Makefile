@@ -2,7 +2,7 @@
 # 
 CC=gcc
 CFLAGS=-W -shared -Wall -fPIC -I../include -ggdb  
-LFLAGS=-shared -D_GNU_SOURCE=1 
+LFLAGS=-lcurl -shared -D_GNU_SOURCE=1 
 
 SRC= $(wildcard *.c)
 OBJ= $(addprefix ../../obj/plugins/,$(SRC:.c=.o))
@@ -13,6 +13,7 @@ CORE_OBJ=$(addprefix ../../obj/core/,$(CORE_SRC:.c=.o))
 all: $(SO)
 
 ../../bin/%.so: ../../obj/plugins/%.o
+	make -C ../core/
 	$(CC) -shared -Wl,-soname,$(basename $@) -o $@ $(CORE_OBJ) $< 
 
 ../../obj/plugins/%.o: %.c
