@@ -19,10 +19,12 @@ EOF
 
 ../bin/filenotify -c ${config} &
 pid=$!
-sleep 1
 
+sleep 5
 echo "hello world" > /tmp/test-$( basename $0 )-1/test1-hello
 echo "hello world" > /tmp/test-$( basename $0 )-2/test2-hello
+
+sleep 10
 
 grep -q test1-hello /tmp/$( basename $0 ).log
 grep_rc=$?
