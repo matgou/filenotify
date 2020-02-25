@@ -26,6 +26,12 @@ struct directory { /* table entry: */
 	int wd;     /* inotify descriptor */
 };
 
+struct plugins {
+	struct plugins *next;
+	void (*func_handle)(struct directory *dir, struct inotify_event *event);
+};
+struct plugins *plugins_lst;
+
 // Function list
 int main(int argc, char *argv[]);
 void displayWelcome();
