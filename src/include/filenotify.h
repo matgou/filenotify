@@ -36,7 +36,7 @@ struct plugins *plugins_lst;
 int main(int argc, char *argv[]);
 void displayWelcome();
 void displayHelp();
-void handle_events(int fd, int n_watch_directories, struct directory *directories);
+void handle_events(int fd, int n_watch_directories, struct directory **directories);
 int mainLoop();
 
 

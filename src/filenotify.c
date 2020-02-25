@@ -71,7 +71,7 @@ displayWelcome ()
  *        argv is the list of watched directories.
  *        Entry 0 of wd and argv is unused.
  */
-void handle_events(int fd, int n_watch_directories, struct directory *directories)
+void handle_events(int fd, int n_watch_directories, struct directory **directories)
 {
 	/* Some systems cannot read integer variables if they are not
            properly aligned. On other systems, incorrect alignment may
@@ -80,7 +80,7 @@ void handle_events(int fd, int n_watch_directories, struct directory *directorie
            struct inotify_event. */
 
 	char buf[4096]
-             __attribute__ ((aligned(__alignof__(struct inotify_event))));
+	__attribute__ ((aligned(__alignof__(struct inotify_event))));
 	const struct inotify_event *event;
 	ssize_t len;
 	char *ptr;
@@ -109,14 +109,14 @@ void handle_events(int fd, int n_watch_directories, struct directory *directorie
 			struct directory *dir;
 
 			for (int i = 0; i < n_watch_directories; ++i) {
-				if (directories[i].wd == event->wd) {
-					log_msg("DEBUG", "dirname=%s descriptor=%i = %i", directories[i].name, directories[i].wd, event->wd);
-					dir = &directories[i];
+				if (directories[i]->wd == event->wd) {
+					log_msg("DEBUG", "dirname=%s descriptor=%i = %i", directories[i]->name, directories[i]->wd, event->wd);
+					dir = directories[i];
 					break;
 				}
 			}
 
-		        struct plugins *plugins_lst_it = plugins_lst;
+		  struct plugins *plugins_lst_it = plugins_lst;
 			for (plugins_lst_it = plugins_lst; plugins_lst_it != NULL; plugins_lst_it = plugins_lst_it->next) {
 				plugins_lst_it->func_handle(dir, event);
 			}
@@ -133,7 +133,7 @@ int mainLoop()
 	int fd;
 	nfds_t nfds;
 	struct pollfd fds[2];
-	struct directory *directories;
+	struct directory **directories;
 	int n_watch_directories=0;
 	struct nlist **watch_directories;
 	struct nlist *np;
@@ -151,17 +151,24 @@ int mainLoop()
 	{
 		for (np = watch_directories[i]; np != NULL; np = np->next)
 		{
-			n_watch_directories++;
-			directories = (struct directory *) realloc(directories, sizeof(struct directory) * n_watch_directories);
-			directories[n_watch_directories - 1].wd = inotify_add_watch(fd, np->defn, IN_CLOSE | IN_DELETE );
-			directories[n_watch_directories - 1].name = np->defn;
-			directories[n_watch_directories - 1].key = np->name;
-			if(directories[n_watch_directories - 1].wd  == -1) {
+			struct directory *dir = (struct directory *) malloc(sizeof(struct directory));
+			dir->wd = inotify_add_watch(fd, np->defn, IN_CLOSE | IN_DELETE );
+			dir->name = np->defn;
+			dir->key = np->name;
+			if(dir->wd  == -1) {
 				log_msg("ERROR", "Cannot watch %s : %s", np->defn, strerror(errno));
 				exit(EXIT_FAILURE);
 			} else {
-				log_msg("DEBUG", "inotify descriptor=%i for directory %s/", directories[n_watch_directories - 1].wd, np->defn);
+				log_msg("DEBUG", "inotify descriptor=%i for directory %s/", dir->wd, np->defn);
 			}
+			if(n_watch_directories > 0) {
+				directories=(struct directory **) realloc(directories, sizeof(struct directory *) * (n_watch_directories + 1));
+			} else {
+				directories=(struct directory **) malloc(sizeof(struct directory *));
+			}
+			directories[n_watch_directories] = dir;
+
+			n_watch_directories++;
 		}
 	}
 
