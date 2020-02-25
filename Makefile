@@ -9,6 +9,9 @@ EXEC=filenotify
 all:
 	make -C src
 
+package:
+	tar -czvf filenotify.tar.gz bin/* filenotify.config
+
 clean:
 	make -C src clean
 
