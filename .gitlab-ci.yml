@@ -10,9 +10,11 @@ build:
     - apt update && apt -y install make autoconf
   script:
     - make
+    - make package
   artifacts:
     paths:
-      - bin/filenotify
+      - bin/*
+      - filenotify.tar.gz
       # depending on your build setup it's most likely a good idea to cache outputs to reduce the build time
       # cache:
       #   paths:
