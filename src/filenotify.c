@@ -82,7 +82,6 @@ void handle_events(int fd, int n_watch_directories, struct directory *directorie
 	char buf[4096]
              __attribute__ ((aligned(__alignof__(struct inotify_event))));
 	const struct inotify_event *event;
-	char *isdir;
 	ssize_t len;
 	char *ptr;
 
@@ -201,8 +200,7 @@ void loadPlugins()
 {
         struct nlist **plugins_config;
         struct nlist *np;
-	struct plugins *plugins_lst_it;
-	void (*func_init)(struct nlist *config[HASHSIZE]);
+				void (*func_init)(struct nlist *config[HASHSIZE]);
 
         /* determine all plugins to load */
         plugins_config=get_configs(config, "plugins.");

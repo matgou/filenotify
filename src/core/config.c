@@ -80,6 +80,12 @@ get_configs(struct nlist *list[], char *prefix)
 {
 	struct nlist **configs;
 	configs = malloc(sizeof(struct nlist *) * HASHSIZE);
+	if ( !configs ) {
+		return NULL;
+	}
+	for (size_t i = 0; i < HASHSIZE; ++i) {
+		configs[i] = NULL;
+	}
 	struct nlist *np;
 
 	for (int i = 0; i < HASHSIZE; i++)
