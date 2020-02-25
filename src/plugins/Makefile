@@ -1,7 +1,7 @@
 # Mathieu GOULIN <mathieu.goulin@gadz.org>
 # 
 CC=gcc
-CFLAGS=-W -shared -Wall -fPIC -I../include -ggdb  
+CFLAGS=-W -shared -Wall -fPIC -I../include -ggdb -std=gnu99
 LFLAGS=-lcurl -shared -D_GNU_SOURCE=1 
 
 SRC= $(wildcard *.c)
