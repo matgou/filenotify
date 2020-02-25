@@ -41,6 +41,7 @@ int
 displayLog(char *tag)
 {
 	if(get_config("loglevel") == NULL) {
+		printf("[NOLOG] ");
 		return 1;
 	}
 	if(strcmp("DEBUG", get_config("loglevel"))==0) {

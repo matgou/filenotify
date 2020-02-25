@@ -12,6 +12,9 @@ loglevel=INFO
 
 watch_directory.0=/tmp/test-$( basename $0 )-1
 watch_directory.1=/tmp/test-$( basename $0 )-2
+
+plugins_dir=../bin/
+plugins.log=plg_notify_log.so
 EOF
 
 ../bin/filenotify -c ${config} &

@@ -27,13 +27,47 @@
 #include <sys/inotify.h>
 #include <filenotify.h>
 #include <plg_notify.h>
+#include <config.h>
 #include <log.h>
+
+void init_plugin(struct nlist *config_ref[HASHSIZE])
+{
+	for(int i = 0; i < HASHSIZE; i++) {
+		config[i] = config_ref[i];
+	}
+}
 
 /**
  * \fn void handle_event()
  * \brief Write log from received event
  */
-static void handle_event(struct directory *dir, struct inotify_event *event)
+void handle_event(struct directory *dir, struct inotify_event *event)
 {
-	log_msg("INFO", "Hello from plg_notify_log.c");
+	char *type;
+	char *isdir;
+	/* Print event type */
+	if (event->mask & IN_OPEN) {
+		type="IN_OPEN";
+	}
+	if (event->mask & IN_CLOSE_NOWRITE) {
+		type="IN_CLOSE_NOWRITE";
+	}
+	if (event->mask & IN_CLOSE_WRITE) {
+		type="IN_CLOSE_WRITE";
+	}
+	if (event->mask & IN_DELETE) {
+		type="IN_DELETE";
+	}
+
+	/* Print type of filesystem object */
+	if (event->mask & IN_ISDIR) {
+		isdir=" [directory]";
+	} else {
+		isdir=" [file]";
+	}
+	if (event->len) {
+		log_msg("INFO", "[%s] %s : %s/%s %s", type, dir->key, dir->name, event->name, isdir);
+	} else {
+		log_msg("INFO", "[%s] %s : %s/ %s", type, dir->key, dir->name, isdir);
+	}
 }

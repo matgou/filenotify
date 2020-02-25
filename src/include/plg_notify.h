@@ -18,9 +18,11 @@
 ******************************************************************************/
 #ifndef plg_notify_h
 #define plg_notifyr_h
+#include <nlist.h>
 
 
 // Function list
-static void handle_event(struct directory *dir, struct inotify_event *event);
+void init_plugin(struct nlist **config_ref);
+void handle_event(struct directory *dir, struct inotify_event *event);
 
 #endif

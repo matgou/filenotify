@@ -78,8 +78,8 @@ display_allconfig(struct nlist *list[])
 struct nlist **
 get_configs(struct nlist *list[], char *prefix)
 {
-	static struct nlist *configs[HASHSIZE];
-	//configs  = malloc(HASHS!IZE * sizeof(struct nlist *));
+	struct nlist **configs;
+	configs = malloc(sizeof(struct nlist *) * HASHSIZE);
 	struct nlist *np;
 
 	for (int i = 0; i < HASHSIZE; i++)
@@ -93,7 +93,7 @@ get_configs(struct nlist *list[], char *prefix)
         }
 	}
 
-	return configs;
+ 	return configs;
 }
 
 /**

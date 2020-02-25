@@ -107,43 +107,19 @@ static void handle_events(int fd, int n_watch_directories, struct directory *dir
 		     ptr += sizeof(struct inotify_event) + event->len) {
 			event = (const struct inotify_event *) ptr;
 			log_msg("DEBUG", "event inotify from descriptor %i", event->wd);
-			char *type;
-			char *dirname;
-			char *key;
-
-			/* Print event type */
-                   	if (event->mask & IN_OPEN) {
-				type="IN_OPEN";
-			}
-			if (event->mask & IN_CLOSE_NOWRITE) {
-				type="IN_CLOSE_NOWRITE";
-			}
-			if (event->mask & IN_CLOSE_WRITE) {
-				type="IN_CLOSE_WRITE";
-			}
-			if (event->mask & IN_DELETE) {
-				type="IN_DELETE";
-			}
+			struct directory *dir;
 
 			for (int i = 0; i < n_watch_directories; ++i) {
 				if (directories[i].wd == event->wd) {
 					log_msg("DEBUG", "dirname=%s descriptor=%i = %i", directories[i].name, directories[i].wd, event->wd);
-					dirname = directories[i].name;
-					key = directories[i].key;
+					dir = &directories[i];
 					break;
 				}
 			}
 
-			/* Print type of filesystem object */
-			if (event->mask & IN_ISDIR) {
-				isdir=" [directory]";
-			} else {
-				isdir=" [file]";
-			}
-			if (event->len) {
-				log_msg("INFO", "[%s] %s : %s/%s %s", type, key, dirname, event->name, isdir);
-			} else {
-				log_msg("INFO", "[%s] %s : %s/ %s", type, key, dirname, isdir);
+		        struct plugins *plugins_lst_it = plugins_lst;
+			for (plugins_lst_it = plugins_lst; plugins_lst_it != NULL; plugins_lst_it = plugins_lst_it->next) {
+				plugins_lst_it->func_handle(dir, event);
 			}
 		}
 	}
@@ -223,16 +199,52 @@ int mainLoop()
 
 void loadPlugins()
 {
-	char *plugin_name = "plg_notify_log.so";
-	char *plugin_path = (char *) malloc( strlen(plugin_name) + strlen(get_config("plugins_dir")) + 1 );
-	strcpy(plugin_path, get_config("plugins_dir"));
-	strcat(plugin_path, plugin_name);
-	log_msg("INFO", "Chargement du plugins : %s", plugin_path);
-	void *plugin = dlopen(plugin_path, RTLD_NOW);
-	if (!plugin)
-	{
-		log_msg("ERROR", "Cannot load %s: %s", plugin_name, dlerror ());
-		exit(EXIT_FAILURE);
+        struct nlist **plugins_config;
+        struct nlist *np;
+	struct plugins *plugins_lst_it;
+	void (*func_init)(struct nlist *config[HASHSIZE]);
+
+        /* determine all plugins to load */
+        plugins_config=get_configs(config, "plugins.");
+        for (int i = 0; i < HASHSIZE; i++)
+        {
+                for (np = plugins_config[i]; np != NULL; np = np->next)
+                {
+			char *plugin_name = np->defn;
+			char *plugin_path = (char *) malloc( strlen(plugin_name) + strlen(get_config("plugins_dir")) + 1 );
+			strcpy(plugin_path, get_config("plugins_dir"));
+			strcat(plugin_path, plugin_name);
+			log_msg("INFO", "Chargement du plugins : %s", plugin_path);
+			// Charging .so
+			void *plugin = dlopen(plugin_path, RTLD_LAZY);
+			if (!plugin)
+			{
+				log_msg("ERROR", "Cannot load %s: %s", plugin_name, dlerror ());
+				exit(EXIT_FAILURE);
+			}
+
+		        *(void**)(&func_init) = dlsym(plugin, "init_plugin");
+			if (!func_init) {
+        			/* no such symbol */
+		        	log_msg("ERROR", "Error: %s", dlerror());
+        			dlclose(plugin);
+		        	exit(EXIT_FAILURE);
+    			}
+
+			// Init du plugins
+			func_init(config);
+			struct plugins *plugins_lst_save = plugins_lst;
+			plugins_lst = malloc(sizeof(struct plugins));
+			plugins_lst->next=plugins_lst_save;
+			plugins_lst->func_handle = dlsym(plugin, "handle_event");
+                        if (!plugins_lst->func_handle) {
+                                /* no such symbol */
+                                log_msg("ERROR", "Error: %s", dlerror());
+                                dlclose(plugin);
+                                exit(EXIT_FAILURE);
+                        }
+
+		}
 	}
 }
 
