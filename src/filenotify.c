@@ -227,6 +227,7 @@ void loadPlugins()
 				log_msg("ERROR", "Cannot load %s: %s", plugin_name, dlerror ());
 				exit(EXIT_FAILURE);
 			}
+			free(plugin_path);
 
 		        *(void**)(&func_init) = dlsym(plugin, "init_plugin");
 			if (!func_init) {

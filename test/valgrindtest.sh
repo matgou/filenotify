@@ -42,6 +42,8 @@ then
 	global_rc=1
 fi
 
+rm -v /tmp/test-$( basename $0 )-1/* /tmp/test-$( basename $0 )-2/*
+sleep 3
 
 kill ${pid}
 

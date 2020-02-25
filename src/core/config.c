@@ -79,7 +79,7 @@ struct nlist **
 get_configs(struct nlist *list[], char *prefix)
 {
 	struct nlist **configs;
-	configs = malloc(sizeof(struct nlist *) * HASHSIZE);
+	configs = (struct nlist **) malloc(sizeof(struct nlist *) * HASHSIZE);
 	if ( !configs ) {
 		return NULL;
 	}
