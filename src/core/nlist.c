@@ -77,3 +77,29 @@ struct nlist *install(struct nlist *list[], char *name, char *defn)
        return NULL;
     return np;
 }
+
+/**
+ * \fn void free_struct()
+ * \brief Recursive free structure
+ */
+void free_struct(struct nlist *l) {
+    if(l->next != NULL) {
+      free_struct(l->next);
+    }
+    free(l->name);
+    free(l->defn);
+    free(l);
+}
+
+/**
+ * \fn void free_nlist()
+ * \brief free a nlist object
+ */
+void free_nlist(struct nlist *list[]) {
+  for (int i = 0; i < HASHSIZE; i++)
+  {
+    if(list[i] != NULL) {
+      free_struct(list[i]);
+    }
+  }
+}

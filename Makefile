@@ -16,7 +16,7 @@ clean:
 	make -C src clean
 
 mrproper: clean
-	rm -v filenotify.tar.gz
+	rm -fv filenotify.tar.gz
 	make -C src mrproper
 
 check:

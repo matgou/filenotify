@@ -37,6 +37,7 @@
 #include <log.h>
 #include <poll.h>
 #include <dlfcn.h>
+#include<signal.h>
 
 
 /**
@@ -229,13 +230,13 @@ void loadPlugins()
 			}
 			free(plugin_path);
 
-		        *(void**)(&func_init) = dlsym(plugin, "init_plugin");
+			*(void**)(&func_init) = dlsym(plugin, "init_plugin");
 			if (!func_init) {
-        			/* no such symbol */
-		        	log_msg("ERROR", "Error: %s", dlerror());
-        			dlclose(plugin);
-		        	exit(EXIT_FAILURE);
-    			}
+      	/* no such symbol */
+		   	log_msg("ERROR", "Error: %s", dlerror());
+      	dlclose(plugin);
+		   	exit(EXIT_FAILURE);
+			}
 
 			// Init du plugins
 			func_init(config);
@@ -243,15 +244,56 @@ void loadPlugins()
 			plugins_lst = malloc(sizeof(struct plugins));
 			plugins_lst->next=plugins_lst_save;
 			plugins_lst->func_handle = dlsym(plugin, "handle_event");
-                        if (!plugins_lst->func_handle) {
-                                /* no such symbol */
-                                log_msg("ERROR", "Error: %s", dlerror());
-                                dlclose(plugin);
-                                exit(EXIT_FAILURE);
-                        }
+			if (!plugins_lst->func_handle) {
+      	/* no such symbol */
+        log_msg("ERROR", "Error: %s", dlerror());
+        dlclose(plugin);
+        exit(EXIT_FAILURE);
+      }
 
 		}
 	}
+	free_nlist(plugins_config);
+}
+
+/**
+ * \fn void sig_handler
+ * \brief trap signal
+ */
+void sig_handler(int signo)
+{
+  if (signo == SIGUSR1) {
+    log_msg("INFO", "received SIGUSR1");
+	} else if (signo == SIGUSR2) {
+    log_msg("INFO", "received SIGUSR2");
+	} else if (signo == SIGINT) {
+    log_msg("INFO", "received SIGING => exit");
+		prg_exit(EXIT_SUCCESS);
+	} else if (signo == SIGTERM) {
+    log_msg("INFO", "received SIGTERM => exit");
+		prg_exit(EXIT_SUCCESS);
+	}
+}
+
+/**
+ * \fn void free_struct()
+ * \brief Recursive free structure
+ */
+void free_plugins(struct plugins *l) {
+    if(l->next != NULL) {
+      free_plugins(l->next);
+    }
+		free(l);
+}
+
+/**
+ * \fn prg_exit()
+ * \brief Exit programm with cleaning mem
+ */
+void prg_exit(int code) {
+	free_nlist(config);
+	free_plugins(plugins_lst);
+	exit(code);
 }
 
 /**
@@ -296,5 +338,18 @@ int main(int argc, char *argv[])
 	display_allconfig(config);
 	loadPlugins();
 	displayWelcome();
+
+  if (signal(SIGUSR1, sig_handler) == SIG_ERR) {
+  	log_msg("ERROR", "can't catch SIGUSR1");
+	}
+	if (signal(SIGUSR2, sig_handler) == SIG_ERR) {
+  	log_msg("ERROR", "can't catch SIGUSR2");
+	}
+	if (signal(SIGINT, sig_handler) == SIG_ERR) {
+  	log_msg("ERROR", "can't catch SIGINT");
+	}
+	if (signal(SIGTERM, sig_handler) == SIG_ERR) {
+  	log_msg("ERROR", "can't catch SIGTERM");
+	}
 	return mainLoop();
 }
