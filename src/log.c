@@ -40,6 +40,9 @@
 int
 displayLog(char *tag)
 {
+	if(get_config("loglevel") == NULL) {
+		return 1;
+	}
 	if(strcmp("DEBUG", get_config("loglevel"))==0) {
 		return 1;
 	}

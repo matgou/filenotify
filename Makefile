@@ -10,10 +10,10 @@ all:
 	make -C src
 
 clean:
-	rm -fv obj/*
+	make -C src clean
 
 mrproper: clean
-	rm -fv bin/$(EXEC)
+	make -C src mrproper
 
 check:
 	make -C test

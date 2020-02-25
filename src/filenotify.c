@@ -36,6 +36,7 @@
 #include <config.h>
 #include <log.h>
 #include <poll.h>
+#include <dlfcn.h>
 
 
 /**
@@ -220,6 +221,21 @@ int mainLoop()
 	return EXIT_SUCCESS;
 }
 
+void loadPlugins()
+{
+	char *plugin_name = "plg_notify_log.so";
+	char *plugin_path = (char *) malloc( strlen(plugin_name) + strlen(get_config("plugins_dir")) + 1 );
+	strcpy(plugin_path, get_config("plugins_dir"));
+	strcat(plugin_path, plugin_name);
+	log_msg("INFO", "Chargement du plugins : %s", plugin_path);
+	void *plugin = dlopen(plugin_path, RTLD_NOW);
+	if (!plugin)
+	{
+		log_msg("ERROR", "Cannot load %s: %s", plugin_name, dlerror ());
+		exit(EXIT_FAILURE);
+	}
+}
+
 /**
  * \fn int main ()
  * \brief entry of the filenotify process
@@ -260,7 +276,7 @@ int main(int argc, char *argv[])
 		return 255;
 	}
 	display_allconfig(config);
-
+	loadPlugins();
 	displayWelcome();
 	return mainLoop();
 }
