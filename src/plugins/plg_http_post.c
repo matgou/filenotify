@@ -29,12 +29,9 @@
 #include <plg_notify.h>
 #include <config.h>
 #include <log.h>
-#include <curl/curl.h>
 #include <string.h>
 #include <stdlib.h>
 
-
-CURL *curl;
 
 /**
  * \fn void init_plugin()
@@ -47,12 +44,6 @@ init_plugin(struct nlist *config_ref[HASHSIZE])
 	for(int i = 0; i < HASHSIZE; i++) {
 		config[i] = config_ref[i];
 	}
-
-	/* In windows, this will init the winsock stuff */
-	curl_global_init(CURL_GLOBAL_ALL);
-
-	/* get a curl handle */
-	curl = curl_easy_init();
 }
 
 /**
@@ -77,17 +68,8 @@ void handle_event(struct directory *dir, struct inotify_event *event)
 		value="0";
 	}
 
-	if(curl)
-	{
-		curl_easy_setopt(curl, CURLOPT_URL, get_config("http_post.url"));
-		char *data;
-		data = malloc(sizeof(char) * (strlen(get_config("http_post.data")) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1));
-		sprintf(data, get_config("http_post.data"), dir->name, event->name, value);
-		log_msg("DEBUG", "POST %s, data: %s", get_config("http_post.url"), data);
-		//	log_msg("INFO", "[%s] %s : %s/%s %s", type, dir->key, dir->name, event->name, isdir);
-
-
-		/* cleanup */
-		curl_easy_cleanup(curl);
-	}
+	char *data = malloc(sizeof(char) * (strlen(get_config("http_post.data")) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1));
+	sprintf(data, get_config("http_post.data"), dir->name, event->name, value);
+	log_msg("DEBUG", "POST %s, data: %s", get_config("http_post.url"), data);
+	//	log_msg("INFO", "[%s] %s : %s/%s %s", type, dir->key, dir->name, event->name, isdir);
 }
