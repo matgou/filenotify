@@ -51,7 +51,7 @@ init_plugin(struct nlist *config_ref[HASHSIZE])
  * \fn void handle_event()
  * \brief Write log from received event
  */
-void handle_event(struct directory *dir, struct inotify_event *event)
+void handle_event(struct directory *dir, const struct inotify_event *event)
 {
 
 	CURL *curl;
