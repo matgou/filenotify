@@ -31,6 +31,7 @@
 #include <log.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 
 /**
@@ -50,7 +51,7 @@ init_plugin(struct nlist *config_ref[HASHSIZE])
  * \fn void handle_event()
  * \brief Write log from received event
  */
-void handle_event(struct directory *dir, struct inotify_event *event)
+void handle_event(struct directory *dir, const struct inotify_event *event)
 {
 	log_msg("DEBUG", "handle - plg_http_post");
 	char *value;
@@ -82,6 +83,7 @@ void handle_event(struct directory *dir, struct inotify_event *event)
 		{
 			log_msg("ERROR", "plg_notify_exec.c: Le retour de exevp est KO");
 		}
+		exit(EXIT_SUCCESS);
 	}
 	//	log_msg("INFO", "[%s] %s : %s/%s %s", type, dir->key, dir->name, event->name, isdir);
 }

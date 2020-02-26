@@ -28,7 +28,7 @@ struct directory { /* table entry: */
 
 struct plugins {
 	struct plugins *next;
-	void (*func_handle)(struct directory *dir, struct inotify_event *event);
+	void (*func_handle)(struct directory *dir, const struct inotify_event *event);
 };
 struct plugins *plugins_lst;
 
