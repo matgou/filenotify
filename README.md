@@ -2,6 +2,9 @@
 
 Filenotify is a binary tools for monitoring filesystem modification and store event in influxdb.
 
+## Donwload
+
+You can download binary from this link : [filenotify.tar.gz](https://framagit.org/matgou/filenotify/-/jobs/artifacts/master/raw/filenotify.tar.gz?job=build)
 ## Installation
 
 Use Make to build and install the binarny
