@@ -38,6 +38,7 @@ void displayWelcome();
 void displayHelp();
 void handle_events(int fd, int n_watch_directories, struct directory **directories);
 int mainLoop();
+void free_plugins(struct plugins *l);
 void prg_exit(int code);
 void sig_handler(int signo);
 char *configFilePath;

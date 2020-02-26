@@ -38,12 +38,9 @@
  * \brief initialise un Plugins
  */
 void
-init_plugin(struct nlist *config_ref[HASHSIZE])
+init_plugin(struct nlist **config_ref)
 {
-
-	for(int i = 0; i < HASHSIZE; i++) {
-		config[i] = config_ref[i];
-	}
+		config = config_ref;
 }
 
 /**
@@ -52,7 +49,7 @@ init_plugin(struct nlist *config_ref[HASHSIZE])
  */
 void handle_event(struct directory *dir, struct inotify_event *event)
 {
-	log_msg("DEBUG", "handle - plg_http_post");
+	log_msg("DEBUG", "handle - plg_notify_exec");
 	char *value;
 	/* Print event type */
 	if (event->mask & IN_OPEN) {
@@ -71,17 +68,18 @@ void handle_event(struct directory *dir, struct inotify_event *event)
 	char *cmd = malloc(sizeof(char) * (strlen(get_config("exec.cmd")) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1));
 	sprintf(cmd, get_config("exec.cmd"), dir->name, event->name, value);
 	log_msg("DEBUG", "EXECUTE CMD: %s", cmd);
-        char *args[]={"/bin/bash","-c",cmd,NULL}; 
-	pid_t pid = fork(); 
-	if (pid == -1){ 
+        char *args[]={"/bin/bash","-c",cmd,NULL};
+	pid_t pid = fork();
+	if (pid == -1){
 		log_msg("ERROR", "can't fork, error occured");
-		exit(EXIT_FAILURE); 
-	} else if (pid == 0){ 
+		exit(EXIT_FAILURE);
+	} else if (pid == 0){
 		// child process
 	        if(execvp(args[0],args) < 0)
 		{
 			log_msg("ERROR", "plg_notify_exec.c: Le retour de exevp est KO");
 		}
 	}
+	free(cmd);
 	//	log_msg("INFO", "[%s] %s : %s/%s %s", type, dir->key, dir->name, event->name, isdir);
 }

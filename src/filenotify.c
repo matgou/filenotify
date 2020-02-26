@@ -204,11 +204,12 @@ int mainLoop()
 	return EXIT_SUCCESS;
 }
 
-void loadPlugins()
+struct plugins *loadPlugins()
 {
+	struct plugins *plugins_lst_ptr = NULL;
         struct nlist **plugins_config;
         struct nlist *np;
-				void (*func_init)(struct nlist *config[HASHSIZE]);
+	void (*func_init)(struct nlist *config[HASHSIZE]);
 
         /* determine all plugins to load */
         plugins_config=get_configs(config, "plugins.");
@@ -240,20 +241,20 @@ void loadPlugins()
 
 			// Init du plugins
 			func_init(config);
-			struct plugins *plugins_lst_save = plugins_lst;
-			plugins_lst = malloc(sizeof(struct plugins));
-			plugins_lst->next=plugins_lst_save;
-			plugins_lst->func_handle = dlsym(plugin, "handle_event");
-			if (!plugins_lst->func_handle) {
-      	/* no such symbol */
-        log_msg("ERROR", "Error: %s", dlerror());
-        dlclose(plugin);
-        exit(EXIT_FAILURE);
-      }
-
+			struct plugins *plugins_lst_save = plugins_lst_ptr;
+			plugins_lst_ptr = malloc(sizeof(struct plugins));
+			plugins_lst_ptr->next=plugins_lst_save;
+			plugins_lst_ptr->func_handle = dlsym(plugin, "handle_event");
+			if (!plugins_lst_ptr->func_handle) {
+				/* no such symbol */
+				log_msg("ERROR", "Error: %s", dlerror());
+				dlclose(plugin);
+				exit(EXIT_FAILURE);
+			}
 		}
 	}
-	free_nlist(plugins_config);
+	//free_nlist(plugins_config);
+	return plugins_lst_ptr;
 }
 
 /**
@@ -263,13 +264,34 @@ void loadPlugins()
 void sig_handler(int signo)
 {
 	if (signo == SIGUSR1) {
-	log_msg("INFO", "received SIGUSR1");
-	if(loadConfig(configFilePath) != 0) {
-		fprintf (stderr, "Critical error while loading config, exit\n");
-		exit(EXIT_FAILURE);
-	}
-	display_allconfig(config);
-	loadPlugins();
+		log_msg("INFO", "received SIGUSR1");
+
+		struct nlist **config_new;
+		struct plugins *plugins_lst_new;
+		struct nlist **config_save = config;
+		struct plugins *plugins_lst_save = plugins_lst;
+		// Init new config and load file into it
+		config_new = malloc(sizeof(struct nlist *) * HASHSIZE);
+		for(int i=0; i<HASHSIZE; i++) {
+			config_new[i] = NULL;
+		}
+		if(loadConfig(config_new, configFilePath) != 0) {
+			fprintf (stderr, "Critical error while loading config, exit\n");
+			exit(EXIT_FAILURE);
+		}
+		// Switch config
+		config = config_new;
+		// free old config
+		free_nlist(config_save);
+		free(config_save);
+		// Display config
+		display_allconfig(config);
+
+		// Init and load new plugin list
+		plugins_lst_new = loadPlugins();
+		plugins_lst=plugins_lst_new;
+		// free old plugins
+		free_plugins(plugins_lst_save);
 	} else if (signo == SIGUSR2) {
 		log_msg("INFO", "received SIGUSR2");
 	} else if (signo == SIGINT) {
@@ -286,10 +308,10 @@ void sig_handler(int signo)
  * \brief Recursive free structure
  */
 void free_plugins(struct plugins *l) {
-    if(l->next != NULL) {
-      free_plugins(l->next);
-    }
-		free(l);
+	if(l->next != NULL) {
+		free_plugins(l->next);
+	}
+	free(l);
 }
 
 /**
@@ -310,7 +332,7 @@ int main(int argc, char *argv[])
 {
 	int c;
 
-	while ((c = getopt (argc, argv, "c:")) != -1)
+	while ((c = getopt (argc, argv, "c:")) != -1) {
 		switch (c)
 		{
       			case 'c':
@@ -335,13 +357,19 @@ int main(int argc, char *argv[])
 					return 255;
 				}
 		}
-	if(loadConfig(configFilePath) != 0) {
+	}
+	config = malloc(sizeof(struct nlist *) * HASHSIZE);
+	for(int i=0; i<HASHSIZE; i++) {
+		config[i] = NULL;
+	}
+
+	if(loadConfig(config, configFilePath) != 0) {
 		fprintf (stderr, "Critical error while loading config, exit\n");
 		displayHelp();
 		return 255;
 	}
 	display_allconfig(config);
-	loadPlugins();
+	plugins_lst = loadPlugins();
 	displayWelcome();
 
   if (signal(SIGUSR1, sig_handler) == SIG_ERR) {

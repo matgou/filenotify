@@ -39,12 +39,9 @@
  * \brief initialise un Plugins
  */
 void
-init_plugin(struct nlist *config_ref[HASHSIZE])
+init_plugin(struct nlist **config_ref)
 {
-
-	for(int i = 0; i < HASHSIZE; i++) {
-		config[i] = config_ref[i];
-	}
+    config = config_ref;
 }
 
 /**
