@@ -65,6 +65,7 @@ void handle_event(struct directory *dir, struct inotify_event *event)
 	if(curl) {
 		log_msg("DEBUG", "handle - plg_http_post");
 		char *value;
+		char *data;
 		/* Print event type */
 		if (event->mask & IN_OPEN) {
 			value="1";
@@ -79,8 +80,14 @@ void handle_event(struct directory *dir, struct inotify_event *event)
 			value="0";
 		}
 
-		char *data = malloc(sizeof(char) * (strlen(get_config("http_post.data")) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1));
-		sprintf(data, get_config("http_post.data"), dir->name, event->name, value);
+		if (event->len) {
+			data = malloc(sizeof(char) * (strlen(get_config("http_post.data")) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1));
+			sprintf(data, get_config("http_post.data"), dir->name, event->name, value);
+		} else {
+			data = malloc(sizeof(char) * (strlen(get_config("http_post.data")) + strlen(event->name) + strlen(value) + 1));
+			sprintf(data, get_config("http_post.data"), dir->name, "", value);
+		}
+
 		log_msg("DEBUG", "POST %s, data: %s", get_config("http_post.url"), data);
 
 		curl_easy_setopt(curl, CURLOPT_URL, get_config("http_post.url"));
