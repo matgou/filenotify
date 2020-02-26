@@ -4,7 +4,7 @@ Filenotify is a binary tools for monitoring filesystem modification and store ev
 
 ## Donwload
 
-You can download binary from this link : [filenotify.tar.gz](https://framagit.org/matgou/filenotify/-/jobs/artifacts/master/download?job=build)
+You can download binary from this link : [filenotify.tar.gz](https://framagit.org/matgou/filenotify/-/jobs/artifacts/master/raw/filenotify.tar.gz?job=build)
 ## Installation
 
 Use Make to build and install the binarny
