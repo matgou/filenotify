@@ -40,5 +40,6 @@ void handle_events(int fd, int n_watch_directories, struct directory **directori
 int mainLoop();
 void prg_exit(int code);
 void sig_handler(int signo);
+char *configFilePath;
 
 #endif

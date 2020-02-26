@@ -37,7 +37,7 @@
 #include <log.h>
 #include <poll.h>
 #include <dlfcn.h>
-#include<signal.h>
+#include <signal.h>
 
 
 /**
@@ -262,15 +262,21 @@ void loadPlugins()
  */
 void sig_handler(int signo)
 {
-  if (signo == SIGUSR1) {
-    log_msg("INFO", "received SIGUSR1");
+	if (signo == SIGUSR1) {
+	log_msg("INFO", "received SIGUSR1");
+	if(loadConfig(configFilePath) != 0) {
+		fprintf (stderr, "Critical error while loading config, exit\n");
+		exit(EXIT_FAILURE);
+	}
+	display_allconfig(config);
+	loadPlugins();
 	} else if (signo == SIGUSR2) {
-    log_msg("INFO", "received SIGUSR2");
+		log_msg("INFO", "received SIGUSR2");
 	} else if (signo == SIGINT) {
-    log_msg("INFO", "received SIGING => exit");
+		log_msg("INFO", "received SIGING => exit");
 		prg_exit(EXIT_SUCCESS);
 	} else if (signo == SIGTERM) {
-    log_msg("INFO", "received SIGTERM => exit");
+		log_msg("INFO", "received SIGTERM => exit");
 		prg_exit(EXIT_SUCCESS);
 	}
 }
@@ -303,7 +309,6 @@ void prg_exit(int code) {
 int main(int argc, char *argv[])
 {
 	int c;
-	char *configFilePath = NULL;
 
 	while ((c = getopt (argc, argv, "c:")) != -1)
 		switch (c)
