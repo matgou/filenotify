@@ -66,13 +66,13 @@ displayWelcome ()
 
 /**
  * \fn void handle_events()
- * \brief Read all available inotify events from the file descriptor 'fd'.
+ * \brief Read all available inotify events from the file descriptor 'inotify_fd'.
  *        wd is the table of watch descriptors for the directories in argv.
  *        argc is the length of wd and argv.
  *        argv is the list of watched directories.
  *        Entry 0 of wd and argv is unused.
  */
-void handle_events(int fd, int n_watch_directories, struct directory **directories)
+void handle_events()
 {
 	/* Some systems cannot read integer variables if they are not
            properly aligned. On other systems, incorrect alignment may
@@ -89,7 +89,7 @@ void handle_events(int fd, int n_watch_directories, struct directory **directori
         /* Loop while events can be read from inotify file descriptor. */
         for (;;) {
 		/* Read some events. */
-		len = read(fd, buf, sizeof buf);
+		len = read(inotify_fd, buf, sizeof buf);
 		if (len == -1 && errno != EAGAIN) {
 			log_msg("ERROR", "Error while read inotify event : ", strerror(errno));
 			exit(EXIT_FAILURE);
@@ -107,22 +107,57 @@ void handle_events(int fd, int n_watch_directories, struct directory **directori
 		     ptr += sizeof(struct inotify_event) + event->len) {
 			event = (const struct inotify_event *) ptr;
 			log_msg("DEBUG", "event inotify from descriptor %i", event->wd);
-			struct directory *dir;
+			struct directory *dir = NULL;
 
-			for (int i = 0; i < n_watch_directories; ++i) {
-				if (directories[i]->wd == event->wd) {
-					log_msg("DEBUG", "dirname=%s descriptor=%i = %i", directories[i]->name, directories[i]->wd, event->wd);
-					dir = directories[i];
+			struct directory *directory_lst_it = directories;
+			for(directory_lst_it = directories; directory_lst_it != NULL; directory_lst_it = directory_lst_it->next) {
+				if (directory_lst_it->wd == event->wd) {
+					log_msg("DEBUG", "dirname=%s descriptor=%i = %i", directory_lst_it->name, directory_lst_it->wd, event->wd);
+					dir = directory_lst_it;
 					break;
 				}
 			}
-
-		  struct plugins *plugins_lst_it = plugins_lst;
-			for (plugins_lst_it = plugins_lst; plugins_lst_it != NULL; plugins_lst_it = plugins_lst_it->next) {
-				plugins_lst_it->func_handle(dir, event);
-			}
+			if(dir != NULL) {
+				struct plugins *plugins_lst_it = plugins_lst;
+                		for (plugins_lst_it = plugins_lst; plugins_lst_it != NULL; plugins_lst_it = plugins_lst_it->next) {
+					plugins_lst_it->func_handle(dir, event);
+				}
+            		}
 		}
 	}
+}
+
+struct directory *watchInotifyDirectory()
+{
+	struct directory *dir=NULL;
+	struct nlist **watch_directories;
+	int n_watch_directories=0;
+	struct nlist *np;
+
+	/* determine all directory to watch */
+	watch_directories=get_configs(config, "watch_directory.");
+	for (int i = 0; i < HASHSIZE; i++)
+	{
+		for (np = watch_directories[i]; np != NULL; np = np->next)
+		{
+                        struct directory *dir_save = dir;
+			dir = (struct directory *) malloc(sizeof(struct directory));
+                        dir->next=dir_save;
+			dir->wd = inotify_add_watch(inotify_fd, np->defn, IN_CLOSE | IN_DELETE );
+			dir->name = np->defn;
+			dir->key = np->name;
+			dir->number = n_watch_directories;
+			if(dir->wd  == -1) {
+				log_msg("ERROR", "Cannot watch %s : %s", np->defn, strerror(errno));
+				exit(EXIT_FAILURE);
+			} else {
+				log_msg("DEBUG", "inotify descriptor=%i for directory %s/", dir->wd, np->defn);
+			}
+
+			n_watch_directories++;
+		}
+	}
+	return dir;
 }
 
 /**
@@ -131,47 +166,17 @@ void handle_events(int fd, int n_watch_directories, struct directory **directori
  */
 int mainLoop()
 {
-	int fd;
 	nfds_t nfds;
 	struct pollfd fds[2];
-	struct directory **directories;
-	int n_watch_directories=0;
-	struct nlist **watch_directories;
-	struct nlist *np;
 
 	/* Create the file descriptor for accessing the inotify API */
-	fd = inotify_init1(IN_NONBLOCK);
-	if (fd == -1) {
+	inotify_fd = inotify_init1(IN_NONBLOCK);
+	if (inotify_fd == -1) {
 		log_msg("ERROR", "Error while init inotify : ", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
-	/* determine all directory to watch */
-	watch_directories=get_configs(config, "watch_directory.");
-	for (int i = 0; i < HASHSIZE; i++)
-	{
-		for (np = watch_directories[i]; np != NULL; np = np->next)
-		{
-			struct directory *dir = (struct directory *) malloc(sizeof(struct directory));
-			dir->wd = inotify_add_watch(fd, np->defn, IN_CLOSE | IN_DELETE );
-			dir->name = np->defn;
-			dir->key = np->name;
-			if(dir->wd  == -1) {
-				log_msg("ERROR", "Cannot watch %s : %s", np->defn, strerror(errno));
-				exit(EXIT_FAILURE);
-			} else {
-				log_msg("DEBUG", "inotify descriptor=%i for directory %s/", dir->wd, np->defn);
-			}
-			if(n_watch_directories > 0) {
-				directories=(struct directory **) realloc(directories, sizeof(struct directory *) * (n_watch_directories + 1));
-			} else {
-				directories=(struct directory **) malloc(sizeof(struct directory *));
-			}
-			directories[n_watch_directories] = dir;
-
-			n_watch_directories++;
-		}
-	}
+	directories = watchInotifyDirectory();
 
 
 
@@ -179,7 +184,7 @@ int mainLoop()
 	nfds = 1;
 
 	/* Inotify input */
-	fds[0].fd = fd;
+	fds[0].fd = inotify_fd;
 	fds[0].events = POLLIN;
 
 	log_msg("INFO", "Listening for events...");
@@ -195,7 +200,7 @@ int mainLoop()
 		if (poll_num > 0) {
 			if (fds[0].revents & POLLIN) {
 				/* Inotify events are available */
-				handle_events(fd, n_watch_directories, directories);
+				handle_events();
                    	}
                }
 
@@ -270,6 +275,8 @@ void sig_handler(int signo)
 		struct plugins *plugins_lst_new;
 		struct nlist **config_save = config;
 		struct plugins *plugins_lst_save = plugins_lst;
+		struct directory *directories_new;
+		struct directory *directories_save = directories;
 		// Init new config and load file into it
 		config_new = malloc(sizeof(struct nlist *) * HASHSIZE);
 		for(int i=0; i<HASHSIZE; i++) {
@@ -292,6 +299,10 @@ void sig_handler(int signo)
 		plugins_lst=plugins_lst_new;
 		// free old plugins
 		free_plugins(plugins_lst_save);
+
+	        directories_new = watchInotifyDirectory();
+		directories=directories_new;
+		free_directories(directories_save);
 	} else if (signo == SIGUSR2) {
 		log_msg("INFO", "received SIGUSR2");
 	} else if (signo == SIGINT) {
@@ -301,6 +312,17 @@ void sig_handler(int signo)
 		log_msg("INFO", "received SIGTERM => exit");
 		prg_exit(EXIT_SUCCESS);
 	}
+}
+
+/**
+ * \fn void free_struct()
+ * \brief Recursive free structure
+ */
+void free_directories(struct directory *l) {
+	if(l->next != NULL) {
+		free_directories(l->next);
+	}
+	free(l);
 }
 
 /**

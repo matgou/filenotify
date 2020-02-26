@@ -5,6 +5,7 @@ global_rc=0
 
 mkdir /tmp/test-$( basename $0 )-1
 mkdir /tmp/test-$( basename $0 )-2
+mkdir /tmp/test-$( basename $0 )-3
 
 cat > ${config} << EOF
 logfile=/tmp/$( basename $0 ).log
@@ -69,7 +70,21 @@ then
         global_rc=1
 fi
 
+echo "watch_directory.1=/tmp/test-$( basename $0 )-3" >> ${config}
+sleep 1
+kill -s SIGUSR1 ${pid}
+sleep 1
+echo "hello world" > /tmp/test-$( basename $0 )-3/test3-hello
+sleep 1
+grep -q test3-hello /tmp/$( basename $0 ).log
+grep_rc=$?
+if [ "$grep_rc" != "0" ]
+then
+        echo "ERROR : ne trouve pas test2-hello dans le fichier de log."
+        global_rc=1
+fi
+
 kill ${pid}
 
-rm -rvf /tmp/$( basename $0 ).log ${config} /tmp/test-$( basename $0 )-1 /tmp/test-$( basename $0 )-2
+rm -rvf /tmp/$( basename $0 ).log ${config} /tmp/test-$( basename $0 )-1 /tmp/test-$( basename $0 )-2 /tmp/test-$( basename $0 )-3
 exit $global_rc
