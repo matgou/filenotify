@@ -7,13 +7,35 @@ Filenotify is a binary tools for monitoring filesystem modification and store ev
 Use Make to build and install the binarny
 
 ```bash
-make && sudo make install
+make
 ```
 
 ## Usage
 
-```python
+```bash
 bin/filenotify -c filenotify.config
+```
+
+Filenotify will listen kernel's inotify event to do some stuff when file creating or deleting.
+He can store event in influxdb database or log it in a logfile. But he can also lauch a shell script.
+
+```mermaid
+graph TB
+
+  SubGraph1 --> SubGraph1Flow
+  subgraph "InfluxDB"
+  SubGraph1Flow(Http interface)
+  SubGraph1Flow --> Database
+  end
+
+  subgraph "FileNotify"
+  kernel[Inotify Kernel Event] --> daemon[Filenotify daemon]
+  daemon --> SubGraph1[Module influxdb]
+  daemon --> mlog[Module log]
+  mlog --> log[logfile]
+  daemon --> mexec[Module exec]
+  mexec --> bash[Bash command]
+end
 ```
 
 ## Contributing
