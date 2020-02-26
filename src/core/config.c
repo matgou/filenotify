@@ -30,12 +30,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-struct nlist *
-save_config(char *key, char* value)
-{
-	return install(config, key, value);
-}
-
 /**
  * \fn get_config()
  * \brief return an element in config
@@ -108,7 +102,7 @@ get_configs(struct nlist *list[], char *prefix)
  * \return 1 in case of success
  */
 int
-loadConfig (char *configFilePath)
+loadConfig (struct nlist **config_ptr, char *configFilePath)
 {
 	FILE *configFile = NULL;
 	configFile = fopen(configFilePath,  "r");
@@ -135,7 +129,7 @@ loadConfig (char *configFilePath)
 			value[0]='\0';
 			// on enleve le =
 			value = value+1;
-			save_config(configLine, value);
+			install(config_ptr, configLine, value);
 		}
 	}
 

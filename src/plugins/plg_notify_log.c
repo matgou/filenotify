@@ -30,11 +30,9 @@
 #include <config.h>
 #include <log.h>
 
-void init_plugin(struct nlist *config_ref[HASHSIZE])
+void init_plugin(struct nlist **config_ref)
 {
-	for(int i = 0; i < HASHSIZE; i++) {
-		config[i] = config_ref[i];
-	}
+	config = config_ref;
 }
 
 /**

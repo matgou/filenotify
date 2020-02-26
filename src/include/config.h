@@ -23,9 +23,9 @@
 #define CONFIG_DIR "etc/"
 #define TAILLE_MAX 1000
 
-struct nlist *config[HASHSIZE];
+struct nlist **config;
 
-int loadConfig (char *configFilePath);
+int loadConfig (struct nlist **config_ptr, char *configFilePath);
 void freeconfig ();
 struct nlist *save_config(char *key, char* value);
 char *get_config(char *key);

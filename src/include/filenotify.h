@@ -24,6 +24,8 @@ struct directory { /* table entry: */
 	char *name; /* directory name */
 	char *key;  /* directory key */
 	int wd;     /* inotify descriptor */
+	int number; /* number of directory */
+	struct directory *next;
 };
 
 struct plugins {
@@ -31,13 +33,17 @@ struct plugins {
 	void (*func_handle)(struct directory *dir, const struct inotify_event *event);
 };
 struct plugins *plugins_lst;
+struct directory *directories;
+int inotify_fd;
 
 // Function list
 int main(int argc, char *argv[]);
 void displayWelcome();
 void displayHelp();
-void handle_events(int fd, int n_watch_directories, struct directory **directories);
+void handle_events();
 int mainLoop();
+void free_directories(struct directory *l);
+void free_plugins(struct plugins *l);
 void prg_exit(int code);
 void sig_handler(int signo);
 char *configFilePath;
