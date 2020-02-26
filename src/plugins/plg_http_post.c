@@ -86,6 +86,11 @@ void handle_event(struct directory *dir, struct inotify_event *event)
 		curl_easy_setopt(curl, CURLOPT_URL, get_config("http_post.url"));
 		/* Now specify the POST data */
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+		/* allow whatever auth the server speaks */
+		if(get_config("http_post.auth") != NULL) {
+			curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+			curl_easy_setopt(curl, CURLOPT_USERPWD, get_config("http_post.auth"));
+		}
 		//	log_msg("INFO", "[%s] %s : %s/%s %s", type, dir->key, dir->name, event->name, isdir);
 
 		/* Perform the request, res will get the return code */
