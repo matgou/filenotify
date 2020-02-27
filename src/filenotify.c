@@ -140,7 +140,7 @@ struct directory *watchInotifyDirectory()
 		struct directory *dir_save = dir;
 		dir = (struct directory *) malloc(sizeof(struct directory));
 		dir->next=dir_save;
-		dir->wd = inotify_add_watch(inotify_fd, np->defn, IN_CLOSE | IN_DELETE );
+		dir->wd = inotify_add_watch(inotify_fd, np->defn, IN_MOVE | IN_CLOSE | IN_DELETE );
 		dir->name = strdup(np->defn);
 		dir->key = strdup(np->name);
 		dir->number = n_watch_directories;
@@ -314,6 +314,7 @@ void free_directories(struct directory *l) {
 	if(l->next != NULL) {
 		free_directories(l->next);
 	}
+	inotify_rm_watch(inotify_fd,l->wd);
 	free(l->name);
 	free(l->key);
 	free(l);

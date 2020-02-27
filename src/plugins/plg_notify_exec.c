@@ -65,6 +65,16 @@ void handle_event(struct directory *dir, const struct inotify_event *event)
 	if (event->mask & IN_DELETE) {
 		value="0";
 	}
+        if (event->mask & IN_MOVE_SELF) {
+                value="1";
+        }
+        if (event->mask & IN_MOVED_FROM) {
+                value="0";
+        }
+        if (event->mask & IN_MOVED_TO) {
+                value="1";
+        }
+
 
 	char *cmd = malloc(sizeof(char) * (strlen(get_config("exec.cmd")) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1));
 	sprintf(cmd, get_config("exec.cmd"), dir->name, event->name, value);
