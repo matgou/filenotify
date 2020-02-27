@@ -130,32 +130,28 @@ void handle_events()
 struct directory *watchInotifyDirectory()
 {
 	struct directory *dir=NULL;
-	struct nlist **watch_directories;
+	struct nlist *watch_directories;
 	int n_watch_directories=0;
 	struct nlist *np;
 
 	/* determine all directory to watch */
 	watch_directories=get_configs(config, "watch_directory.");
-	for (int i = 0; i < HASHSIZE; i++)
-	{
-		for (np = watch_directories[i]; np != NULL; np = np->next)
-		{
-                        struct directory *dir_save = dir;
-			dir = (struct directory *) malloc(sizeof(struct directory));
-                        dir->next=dir_save;
-			dir->wd = inotify_add_watch(inotify_fd, np->defn, IN_CLOSE | IN_DELETE );
-			dir->name = np->defn;
-			dir->key = np->name;
-			dir->number = n_watch_directories;
-			if(dir->wd  == -1) {
-				log_msg("ERROR", "Cannot watch %s : %s", np->defn, strerror(errno));
-				exit(EXIT_FAILURE);
-			} else {
-				log_msg("DEBUG", "inotify descriptor=%i for directory %s/", dir->wd, np->defn);
-			}
-
-			n_watch_directories++;
+        for(np = watch_directories; np != NULL; np = np->next) {
+		struct directory *dir_save = dir;
+		dir = (struct directory *) malloc(sizeof(struct directory));
+		dir->next=dir_save;
+		dir->wd = inotify_add_watch(inotify_fd, np->defn, IN_CLOSE | IN_DELETE );
+		dir->name = np->defn;
+		dir->key = np->name;
+		dir->number = n_watch_directories;
+		if(dir->wd  == -1) {
+			log_msg("ERROR", "Cannot watch %s : %s", np->defn, strerror(errno));
+			exit(EXIT_FAILURE);
+		} else {
+			log_msg("DEBUG", "inotify descriptor=%i for directory %s/", dir->wd, np->defn);
 		}
+
+		n_watch_directories++;
 	}
 	return dir;
 }
@@ -212,52 +208,49 @@ int mainLoop()
 struct plugins *loadPlugins()
 {
 	struct plugins *plugins_lst_ptr = NULL;
-        struct nlist **plugins_config;
+        struct nlist *plugins_config;
         struct nlist *np;
-	void (*func_init)(struct nlist *config[HASHSIZE]);
+	void (*func_init)(struct nlist *config);
 
         /* determine all plugins to load */
         plugins_config=get_configs(config, "plugins.");
-        for (int i = 0; i < HASHSIZE; i++)
-        {
-                for (np = plugins_config[i]; np != NULL; np = np->next)
-                {
-			char *plugin_name = np->defn;
-			char *plugin_path = (char *) malloc( strlen(plugin_name) + strlen(get_config("plugins_dir")) + 1 );
-			strcpy(plugin_path, get_config("plugins_dir"));
-			strcat(plugin_path, plugin_name);
-			log_msg("INFO", "Chargement du plugins : %s", plugin_path);
-			// Charging .so
-			void *plugin = dlopen(plugin_path, RTLD_LAZY);
-			if (!plugin)
-			{
-				log_msg("ERROR", "Cannot load %s: %s", plugin_name, dlerror ());
-				exit(EXIT_FAILURE);
-			}
-			free(plugin_path);
+        for(np = plugins_config; np != NULL; np = np->next) {
+		char *plugin_name = np->defn;
+		char *plugin_path = (char *) malloc( strlen(plugin_name) + strlen(get_config("plugins_dir")) + 1 );
+		strcpy(plugin_path, get_config("plugins_dir"));
+		strcat(plugin_path, plugin_name);
+		log_msg("INFO", "Chargement du plugins : %s", plugin_path);
+		// Charging .so
+		void *plugin = dlopen(plugin_path, RTLD_LAZY);
+		if (!plugin)
+		{
+			log_msg("ERROR", "Cannot load %s: %s", plugin_name, dlerror ());
+			exit(EXIT_FAILURE);
+		}
+		free(plugin_path);
 
-			*(void**)(&func_init) = dlsym(plugin, "init_plugin");
-			if (!func_init) {
-      	/* no such symbol */
-		   	log_msg("ERROR", "Error: %s", dlerror());
-      	dlclose(plugin);
+		*(void**)(&func_init) = dlsym(plugin, "init_plugin");
+		if (!func_init) {
+      			/* no such symbol */
+	   		log_msg("ERROR", "Error: %s", dlerror());
+      			dlclose(plugin);
 		   	exit(EXIT_FAILURE);
-			}
+		}
 
-			// Init du plugins
-			func_init(config);
-			struct plugins *plugins_lst_save = plugins_lst_ptr;
-			plugins_lst_ptr = malloc(sizeof(struct plugins));
-			plugins_lst_ptr->next=plugins_lst_save;
-			plugins_lst_ptr->func_handle = dlsym(plugin, "handle_event");
-			if (!plugins_lst_ptr->func_handle) {
-				/* no such symbol */
-				log_msg("ERROR", "Error: %s", dlerror());
-				dlclose(plugin);
-				exit(EXIT_FAILURE);
-			}
+		// Init du plugins
+		func_init(config);
+		struct plugins *plugins_lst_save = plugins_lst_ptr;
+		plugins_lst_ptr = malloc(sizeof(struct plugins));
+		plugins_lst_ptr->next=plugins_lst_save;
+		plugins_lst_ptr->func_handle = dlsym(plugin, "handle_event");
+		if (!plugins_lst_ptr->func_handle) {
+			/* no such symbol */
+			log_msg("ERROR", "Error: %s", dlerror());
+			dlclose(plugin);
+			exit(EXIT_FAILURE);
 		}
 	}
+
 	//free_nlist(plugins_config);
 	return plugins_lst_ptr;
 }
@@ -271,18 +264,15 @@ void sig_handler(int signo)
 	if (signo == SIGUSR1) {
 		log_msg("INFO", "received SIGUSR1");
 
-		struct nlist **config_new;
+		struct nlist *config_new;
 		struct plugins *plugins_lst_new;
-		struct nlist **config_save = config;
+		struct nlist *config_save = config;
 		struct plugins *plugins_lst_save = plugins_lst;
 		struct directory *directories_new;
 		struct directory *directories_save = directories;
 		// Init new config and load file into it
-		config_new = malloc(sizeof(struct nlist *) * HASHSIZE);
-		for(int i=0; i<HASHSIZE; i++) {
-			config_new[i] = NULL;
-		}
-		if(loadConfig(config_new, configFilePath) != 0) {
+		config_new = NULL;
+		if((config_new = loadConfig(configFilePath)) == 0) {
 			fprintf (stderr, "Critical error while loading config, exit\n");
 			exit(EXIT_FAILURE);
 		}
@@ -341,6 +331,7 @@ void free_plugins(struct plugins *l) {
  * \brief Exit programm with cleaning mem
  */
 void prg_exit(int code) {
+	free_directories(directories);
 	free_nlist(config);
 	free_plugins(plugins_lst);
 	exit(code);
@@ -380,12 +371,9 @@ int main(int argc, char *argv[])
 				}
 		}
 	}
-	config = malloc(sizeof(struct nlist *) * HASHSIZE);
-	for(int i=0; i<HASHSIZE; i++) {
-		config[i] = NULL;
-	}
+	config = NULL;
 
-	if(loadConfig(config, configFilePath) != 0) {
+	if((config = loadConfig(configFilePath)) == 0) {
 		fprintf (stderr, "Critical error while loading config, exit\n");
 		displayHelp();
 		return 255;

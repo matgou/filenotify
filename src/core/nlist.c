@@ -22,84 +22,66 @@
 #include <string.h>
 
 /**
- * \fn unsigned hash()
- * \brief form hash value for string s
- * \return hash int
- */
-unsigned hash(char *s)
-{
-    unsigned hashval;
-    for (hashval = 0; *s != '\0'; s++)
-      hashval = *s + 31 * hashval;
-    return hashval % HASHSIZE;
-}
-
-/**
  * \fn unsigned lookup()
- * \brief look for s in hashtab
+ * \brief look for a string in nlist
  * \return list element
  */
-struct nlist *lookup(struct nlist *list[], char *s)
+struct nlist *lookup(struct nlist *list, char *s)
 {
-    struct nlist *np;
-    for (np = list[hash(s)]; np != NULL; np = np->next) {
-        if (np != NULL) {
-            if(np->name == 0) {
-                continue;
-            }
-            if (strcmp(s, np->name) == 0) {
-                return np; /* found */
-            }
-        }
-    }
-    return NULL; /* not found */
+	struct nlist *list_it = list;
+	for(list_it = list; list_it != NULL; list_it = list_it->next) {
+		if(list_it->name == 0) {
+			continue;
+		}
+		if (strcmp(s, list_it->name) == 0) {
+			return list_it; /* found */
+		}
+	}
+
+	return NULL; /* not found */
 }
 
 /**
- * \fn nlist install(char *name, char *defn)
+ * \fn nlist install()
  * \brief install: put (name, defn) in hashtab
  * \return
  */
-struct nlist *install(struct nlist *list[], char *name, char *defn)
+struct nlist *install(struct nlist *list, char *name, char *defn)
 {
-    struct nlist *np;
-    unsigned hashval;
-    if ((np = lookup(list, name)) == NULL) { /* not found */
-        np = (struct nlist *) malloc(sizeof(*np));
-        if (np == NULL || (np->name = strdup(name)) == NULL)
-          return NULL;
-        hashval = hash(name);
-        np->next = list[hashval];
-        list[hashval] = np;
-    } else /* already there */
-        free((void *) np->defn); /*free previous defn */
-    if ((np->defn = strdup(defn)) == NULL)
-       return NULL;
-    return np;
-}
+	struct nlist *np = NULL;
+	if ((np = lookup(list, name)) == NULL) { /* not found */
+		np = (struct nlist *) malloc(sizeof(struct nlist));
+		np->next = list;
+        if (np == NULL || (np->name = strdup(name)) == NULL) {
+			return NULL;
+		}
+		if ((np->defn = strdup(defn)) == NULL) {
+			return NULL;
+		}
+		/* replace list main object */
 
-/**
- * \fn void free_struct()
- * \brief Recursive free structure
- */
-void free_struct(struct nlist *l) {
-    if(l->next != NULL) {
-      free_struct(l->next);
-    }
-    free(l->name);
-    free(l->defn);
-    free(l);
+		list = np;
+	} else { /* already there */
+        	free((void *) np->defn); /*free previous defn */
+		if ((np->defn = strdup(defn)) == NULL) {
+			return NULL;
+		}
+	}
+
+	return np;
 }
 
 /**
  * \fn void free_nlist()
  * \brief free a nlist object
  */
-void free_nlist(struct nlist *list[]) {
-  for (int i = 0; i < HASHSIZE; i++)
-  {
-    if(list[i] != NULL) {
-      free_struct(list[i]);
-    }
-  }
+void free_nlist(struct nlist *l) {
+	// recursive
+	if(l->next != NULL) {
+		free_nlist(l->next);
+	}
+	// free object
+	free(l->name);
+	free(l->defn);
+	free(l);
 }
