@@ -2,7 +2,7 @@
 # 
 CC=gcc
 CFLAGS=-W -shared -Wall -fPIC -I../include -ggdb -std=gnu99 $(OPTARGS)
-LFLAGS=-lcurl -shared -D_GNU_SOURCE=1 
+LFLAGS= -shared -D_GNU_SOURCE=1 
 
 SRC= $(wildcard *.c)
 OBJ= $(addprefix ../../obj/plugins/,$(SRC:.c=.o))
