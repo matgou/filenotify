@@ -24,6 +24,7 @@
  * \date 2019/02/22
  *
  */
+#include <dirent.h>
 #include <sys/inotify.h>
 #include <stdio.h>
 #include <string.h>
@@ -137,21 +138,44 @@ struct directory *watchInotifyDirectory()
 	/* determine all directory to watch */
 	watch_directories=get_configs(config, "watch_directory.");
         for(np = watch_directories; np != NULL; np = np->next) {
-		struct directory *dir_save = dir;
-		dir = (struct directory *) malloc(sizeof(struct directory));
-		dir->next=dir_save;
-		dir->wd = inotify_add_watch(inotify_fd, np->defn, IN_MOVE | IN_CLOSE | IN_DELETE );
-		dir->name = strdup(np->defn);
-		dir->key = strdup(np->name);
-		dir->number = n_watch_directories;
-		if(dir->wd  == -1) {
-			log_msg("ERROR", "Cannot watch %s : %s", np->defn, strerror(errno));
-			exit(EXIT_FAILURE);
-		} else {
-			log_msg("DEBUG", "inotify descriptor=%i for directory %s/", dir->wd, np->defn);
-		}
+		DIR *d = opendir(np->defn);
+		struct dirent *dir_;
+		if (d)
+		{
+			struct directory *dir_save = dir;
+			dir = (struct directory *) malloc(sizeof(struct directory));
+			dir->next=dir_save;
+			dir->wd = inotify_add_watch(inotify_fd, np->defn, IN_MOVE | IN_CLOSE | IN_DELETE );
+			dir->name = strdup(np->defn);
+			dir->key = strdup(np->name);
+			dir->number = n_watch_directories;
+			if(dir->wd  == -1) {
+				log_msg("ERROR", "Cannot watch %s : %s", np->defn, strerror(errno));
+				exit(EXIT_FAILURE);
+			} else {
+				log_msg("DEBUG", "inotify descriptor=%i for directory %s/", dir->wd, np->defn);
+			}
 
-		n_watch_directories++;
+			n_watch_directories++;
+
+			while ((dir_ = readdir(d)) != NULL)
+			{
+				if(dir_->d_type != DT_DIR) {
+					struct inotify_event *event = malloc(sizeof(struct inotify_event) + (sizeof(char) * (strlen(dir_->d_name) + 1)));
+					memcpy(event->name, dir_->d_name, strlen(dir_->d_name));
+					event->name[strlen(dir_->d_name)] = '\0';
+					event->len = strlen(dir_->d_name);
+					event->mask = IN_CLOSE_WRITE;
+	                                struct plugins *plugins_lst_it = plugins_lst;
+					log_msg("INFO", "Presence initiale du fichier : %s/%s (%i) (%i)", dir->name, event->name, strlen(event->name), strlen(dir->name));
+        	                        for (plugins_lst_it = plugins_lst; plugins_lst_it != NULL; plugins_lst_it = plugins_lst_it->next) {
+                	                        plugins_lst_it->func_handle(dir, event);
+                        	        }
+					free(event);
+				}
+			}
+			closedir(d);
+		}
 	}
 	free_nlist(watch_directories);
 	return dir;
@@ -186,20 +210,20 @@ int mainLoop()
 
 	log_msg("INFO", "Listening for events...");
 	while (1) {
-               int poll_num = poll(fds, nfds, -1);
+		int poll_num = poll(fds, nfds, -1);
 		if (poll_num == -1) {
 			if (errno == EINTR) {
 				continue;
 			}
 			log_msg("ERROR", "Cannot poll event : %s", strerror(errno));
-                   	exit(EXIT_FAILURE);
+			exit(EXIT_FAILURE);
 		}
 		if (poll_num > 0) {
 			if (fds[0].revents & POLLIN) {
 				/* Inotify events are available */
 				handle_events();
-                   	}
-               }
+			}
+		}
 
 	}
 	free(directories);
@@ -209,13 +233,13 @@ int mainLoop()
 struct plugins *loadPlugins()
 {
 	struct plugins *plugins_lst_ptr = NULL;
-        struct nlist *plugins_config;
-        struct nlist *np;
+	struct nlist *plugins_config;
+	struct nlist *np;
 	void (*func_init)(struct nlist *config);
 
-        /* determine all plugins to load */
-        plugins_config=get_configs(config, "plugins.");
-        for(np = plugins_config; np != NULL; np = np->next) {
+	/* determine all plugins to load */
+	plugins_config=get_configs(config, "plugins.");
+	for(np = plugins_config; np != NULL; np = np->next) {
 		char *plugin_name = strdup(np->defn);
 		char *plugin_path = (char *) malloc( strlen(plugin_name) + strlen(get_config("plugins_dir")) + 1 );
 		strcpy(plugin_path, get_config("plugins_dir"));
@@ -232,10 +256,10 @@ struct plugins *loadPlugins()
 
 		*(void**)(&func_init) = dlsym(plugin, "init_plugin");
 		if (!func_init) {
-      			/* no such symbol */
-	   		log_msg("ERROR", "Error: %s", dlerror());
-      			dlclose(plugin);
-		   	exit(EXIT_FAILURE);
+			/* no such symbol */
+			log_msg("ERROR", "Error: %s", dlerror());
+			dlclose(plugin);
+			exit(EXIT_FAILURE);
 		}
 
 		// Init du plugins
@@ -292,7 +316,7 @@ void sig_handler(int signo)
 		// free old plugins
 		free_plugins(plugins_lst_save);
 
-	        directories_new = watchInotifyDirectory();
+		directories_new = watchInotifyDirectory();
 		directories=directories_new;
 		free_directories(directories_save);
 	} else if (signo == SIGUSR2) {
@@ -358,22 +382,22 @@ int main(int argc, char *argv[])
 	while ((c = getopt (argc, argv, "c:")) != -1) {
 		switch (c)
 		{
-      			case 'c':
-        			configFilePath = optarg;
+			case 'c':
+				configFilePath = optarg;
 				if(configFilePath == NULL) {
 					displayHelp();
-                                        return 255;
+					return 255;
 				}
 				break;
 			case '?':
 				if (optopt == 'c') {
 					fprintf (stderr, "Option -%c requires an argument.\n", optopt);
 					displayHelp();
-                                        return 255;
+					return 255;
 				} else if (isprint (optopt)) {
 					fprintf (stderr, "Unknown option `-%c'.\n", optopt);
 					displayHelp();
-                                        return 255;
+					return 255;
 				} else {
 					fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
 					displayHelp();
@@ -392,17 +416,17 @@ int main(int argc, char *argv[])
 	plugins_lst = loadPlugins();
 	displayWelcome();
 
-  if (signal(SIGUSR1, sig_handler) == SIG_ERR) {
-  	log_msg("ERROR", "can't catch SIGUSR1");
+	if (signal(SIGUSR1, sig_handler) == SIG_ERR) {
+		log_msg("ERROR", "can't catch SIGUSR1");
 	}
 	if (signal(SIGUSR2, sig_handler) == SIG_ERR) {
-  	log_msg("ERROR", "can't catch SIGUSR2");
+		log_msg("ERROR", "can't catch SIGUSR2");
 	}
 	if (signal(SIGINT, sig_handler) == SIG_ERR) {
-  	log_msg("ERROR", "can't catch SIGINT");
+		log_msg("ERROR", "can't catch SIGINT");
 	}
 	if (signal(SIGTERM, sig_handler) == SIG_ERR) {
-  	log_msg("ERROR", "can't catch SIGTERM");
+		log_msg("ERROR", "can't catch SIGTERM");
 	}
 	return mainLoop();
 }
