@@ -167,7 +167,7 @@ int mainLoop()
 	struct pollfd fds[2];
 
 	/* Create the file descriptor for accessing the inotify API */
-	inotify_fd = inotify_init1(IN_NONBLOCK);
+	inotify_fd = inotify_init();
 	if (inotify_fd == -1) {
 		log_msg("ERROR", "Error while init inotify : ", strerror(errno));
 		exit(EXIT_FAILURE);
