@@ -30,6 +30,8 @@ struct directory { /* table entry: */
 
 struct plugins {
 	struct plugins *next;
+	void *plugin;
+	char *plugin_name;
 	void (*func_handle)(struct directory *dir, const struct inotify_event *event);
 };
 struct plugins *plugins_lst;
