@@ -141,8 +141,8 @@ struct directory *watchInotifyDirectory()
 		dir = (struct directory *) malloc(sizeof(struct directory));
 		dir->next=dir_save;
 		dir->wd = inotify_add_watch(inotify_fd, np->defn, IN_CLOSE | IN_DELETE );
-		dir->name = np->defn;
-		dir->key = np->name;
+		dir->name = strdup(np->defn);
+		dir->key = strdup(np->name);
 		dir->number = n_watch_directories;
 		if(dir->wd  == -1) {
 			log_msg("ERROR", "Cannot watch %s : %s", np->defn, strerror(errno));
@@ -153,6 +153,7 @@ struct directory *watchInotifyDirectory()
 
 		n_watch_directories++;
 	}
+	free_nlist(watch_directories);
 	return dir;
 }
 
@@ -215,7 +216,7 @@ struct plugins *loadPlugins()
         /* determine all plugins to load */
         plugins_config=get_configs(config, "plugins.");
         for(np = plugins_config; np != NULL; np = np->next) {
-		char *plugin_name = np->defn;
+		char *plugin_name = strdup(np->defn);
 		char *plugin_path = (char *) malloc( strlen(plugin_name) + strlen(get_config("plugins_dir")) + 1 );
 		strcpy(plugin_path, get_config("plugins_dir"));
 		strcat(plugin_path, plugin_name);
@@ -243,6 +244,8 @@ struct plugins *loadPlugins()
 		plugins_lst_ptr = malloc(sizeof(struct plugins));
 		plugins_lst_ptr->next=plugins_lst_save;
 		plugins_lst_ptr->func_handle = dlsym(plugin, "handle_event");
+		plugins_lst_ptr->plugin = plugin;
+		plugins_lst_ptr->plugin_name = plugin_name;
 		if (!plugins_lst_ptr->func_handle) {
 			/* no such symbol */
 			log_msg("ERROR", "Error: %s", dlerror());
@@ -251,7 +254,7 @@ struct plugins *loadPlugins()
 		}
 	}
 
-	//free_nlist(plugins_config);
+	free_nlist(plugins_config);
 	return plugins_lst_ptr;
 }
 
@@ -280,7 +283,6 @@ void sig_handler(int signo)
 		config = config_new;
 		// free old config
 		free_nlist(config_save);
-		free(config_save);
 		// Display config
 		display_allconfig(config);
 
@@ -312,6 +314,8 @@ void free_directories(struct directory *l) {
 	if(l->next != NULL) {
 		free_directories(l->next);
 	}
+	free(l->name);
+	free(l->key);
 	free(l);
 }
 
@@ -320,10 +324,15 @@ void free_directories(struct directory *l) {
  * \brief Recursive free structure
  */
 void free_plugins(struct plugins *l) {
-	if(l->next != NULL) {
-		free_plugins(l->next);
+	if(l != NULL) {
+		if(l->next != NULL) {
+			free_plugins(l->next);
+		}
+		log_msg("DEBUG", "Close plugin : %s", l->plugin_name);
+		dlclose(l->plugin);
+		free(l->plugin_name);
+		free(l);
 	}
-	free(l);
 }
 
 /**
@@ -332,8 +341,8 @@ void free_plugins(struct plugins *l) {
  */
 void prg_exit(int code) {
 	free_directories(directories);
-	free_nlist(config);
 	free_plugins(plugins_lst);
+	free_nlist(config);
 	exit(code);
 }
 

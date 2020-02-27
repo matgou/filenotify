@@ -77,11 +77,14 @@ struct nlist *install(struct nlist *list, char *name, char *defn)
  */
 void free_nlist(struct nlist *l) {
 	// recursive
-	if(l->next != NULL) {
-		free_nlist(l->next);
+	if(l != NULL) {
+		if(l->next != NULL) {
+			free_nlist(l->next);
+			l->next=NULL;
+		}
+		// free object
+		free((void *) l->defn);
+		free((void *) l->name);
+		free(l);
 	}
-	// free object
-	free(l->name);
-	free(l->defn);
-	free(l);
 }
