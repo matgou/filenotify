@@ -50,6 +50,10 @@ init_plugin(struct nlist *config_ref)
  */
 void handle_event(struct directory *dir, const struct inotify_event *event)
 {
+        if (event->mask & IN_ISDIR) {
+                return;
+        }
+
 	log_msg("DEBUG", "handle - plg_notify_exec");
 	char *value;
 	/* Print event type */

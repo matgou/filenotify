@@ -2,3 +2,4 @@
 # 
 all:
 	sh logtest.sh 
+	sh valgrindtest.sh

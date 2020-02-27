@@ -98,6 +98,10 @@ init_plugin(struct nlist *config_ref)
 void handle_event(struct directory *dir, const struct inotify_event *event)
 {
 
+	if (event->mask & IN_ISDIR) {
+		return;
+	}
+
 	CURLcode res;
 
 	/* get a curl handle */
