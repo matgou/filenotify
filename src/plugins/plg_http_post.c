@@ -32,7 +32,15 @@
 #include <string.h>
 #include <stdlib.h>
 #include <curl/curl.h>
+#include <dlfcn.h>
 
+
+static void *curl_handle;
+static CURL *curl;
+static CURL *(*f_init)(void) = NULL;
+static CURLcode (*f_setopt)(CURL *, CURLoption, ...) = NULL;
+static CURLcode (*f_perform)(CURL *) = NULL;
+static void (*f_cleanup)(CURL *) = NULL;
 
 /**
  * \fn void init_plugin()
@@ -41,7 +49,46 @@
 void
 init_plugin(struct nlist *config_ref)
 {
+    char *error;
     config = config_ref;
+
+    curl_handle = dlopen ("libcurl.so.3", RTLD_LAZY);
+    if(curl_handle == NULL) {
+        curl_handle = dlopen ("libcurl.so.4", RTLD_LAZY);
+        if(curl_handle != NULL) {
+            log_msg("DEBUG", "plg_http_post use library libcurl.so.4");
+        } else {
+            log_msg("ERROR", "plg_http_post : unable to open a libcurl.so : %s", dlerror());
+	}
+    } else {
+        log_msg("DEBUG", "plg_http_post use library libcurl.so.3");
+    }
+
+    if(curl_handle != NULL) {
+	    f_init = dlsym(curl_handle, "curl_easy_init");
+	    if ((error = dlerror()) != NULL)  {
+		    fprintf (stderr, "%s\n", error);
+		    exit(1);
+	    }
+
+	    f_setopt = dlsym(curl_handle, "curl_easy_setopt");
+	    if ((error = dlerror()) != NULL)  {
+		    fprintf (stderr, "%s\n", error);
+		    exit(1);
+	    }
+
+	    f_perform = dlsym(curl_handle, "curl_easy_perform");
+	    if ((error = dlerror()) != NULL)  {
+		    fprintf (stderr, "%s\n", error);
+		    exit(1);
+	    }
+
+	    f_cleanup = dlsym(curl_handle, "curl_easy_cleanup");
+	    if ((error = dlerror()) != NULL)  {
+		    fprintf (stderr, "%s\n", error);
+		    exit(1);
+	    }
+    }
 }
 
 /**
@@ -51,14 +98,10 @@ init_plugin(struct nlist *config_ref)
 void handle_event(struct directory *dir, const struct inotify_event *event)
 {
 
-	CURL *curl;
 	CURLcode res;
 
-	/* In windows, this will init the winsock stuff */
-	curl_global_init(CURL_GLOBAL_ALL);
-
 	/* get a curl handle */
-	curl = curl_easy_init();
+	curl = (*f_init)();
 	if(curl) {
 		log_msg("DEBUG", "handle - plg_http_post");
 		char *value;
@@ -87,24 +130,23 @@ void handle_event(struct directory *dir, const struct inotify_event *event)
 
 		log_msg("DEBUG", "POST %s, data: %s", get_config("http_post.url"), data);
 
-		curl_easy_setopt(curl, CURLOPT_URL, get_config("http_post.url"));
+		(*f_setopt)(curl, CURLOPT_URL, get_config("http_post.url"));
 		/* Now specify the POST data */
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+		(*f_setopt)(curl, CURLOPT_POSTFIELDS, data);
 		/* allow whatever auth the server speaks */
 		if(get_config("http_post.auth") != NULL) {
-			curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
-			curl_easy_setopt(curl, CURLOPT_USERPWD, get_config("http_post.auth"));
+			(*f_setopt)(curl, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+			(*f_setopt)(curl, CURLOPT_USERPWD, get_config("http_post.auth"));
 		}
 		//	log_msg("INFO", "[%s] %s : %s/%s %s", type, dir->key, dir->name, event->name, isdir);
 
 		/* Perform the request, res will get the return code */
-		res = curl_easy_perform(curl);
+		res = (*f_perform)(curl);
 		/* Check for errors */
 		if(res != CURLE_OK) {
 			log_msg("ERROR", "curl_easy_perform() failed: %s", curl_easy_strerror(res));
 		}
 		/* always cleanup */
-		curl_easy_cleanup(curl);
+		(*f_cleanup)(curl);
 	}
-	curl_global_cleanup();
 }
