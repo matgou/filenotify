@@ -119,6 +119,17 @@ void handle_event(struct directory *dir, const struct inotify_event *event)
 		if (event->mask & IN_DELETE) {
 			value="0";
 		}
+	        if (event->mask & IN_MOVE_SELF) {
+	                value="1";
+	        }
+	        if (event->mask & IN_MOVED_FROM) {
+	                value="0";
+	        }
+	        if (event->mask & IN_MOVED_TO) {
+	                value="1";
+		}
+
+
 
 		if (event->len) {
 			data = malloc(sizeof(char) * (strlen(get_config("http_post.data")) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1));

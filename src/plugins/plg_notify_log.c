@@ -56,6 +56,15 @@ void handle_event(struct directory *dir, const struct inotify_event *event)
 	if (event->mask & IN_DELETE) {
 		type="IN_DELETE";
 	}
+	if (event->mask & IN_MOVE_SELF) {
+		type="IN_MOVE_SELF";
+	}
+	if (event->mask & IN_MOVED_FROM) {
+		type="IN_MOVED_FROM";
+	}
+	if (event->mask & IN_MOVED_TO) {
+		type="IN_MOVED_TO";
+	}
 
 	/* Print type of filesystem object */
 	if (event->mask & IN_ISDIR) {
