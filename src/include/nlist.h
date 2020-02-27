@@ -25,16 +25,9 @@ struct nlist { /* table entry: */
     char *defn; /* replacement text */
 };
 
-#define HASHSIZE 101
-// Usage : static struct nlist *hashtab[HASHSIZE];
-
-/* hash: form hash value for string s */
-unsigned hash(char *s);
-
 /* lookup: look for s in hashtab */
-struct nlist *lookup(struct nlist *list[], char *s);
-struct nlist *install(struct nlist *list[], char *name, char *defn);
-void free_nlist(struct nlist *list[]);
-void free_struct(struct nlist *next);
+struct nlist *lookup(struct nlist *list, char *s);
+struct nlist *install(struct nlist *list, char *name, char *defn);
+void free_nlist(struct nlist *l);
 
 #endif

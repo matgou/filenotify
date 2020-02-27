@@ -39,7 +39,7 @@
  * \brief initialise un Plugins
  */
 void
-init_plugin(struct nlist **config_ref)
+init_plugin(struct nlist *config_ref)
 {
     config = config_ref;
 }

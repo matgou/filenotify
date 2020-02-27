@@ -1,8 +1,8 @@
 # Mathieu GOULIN <mathieu.goulin@gadz.org>
 # 
 CC=gcc
-CFLAGS=-W -Wall -fPIC -I./include -ggdb -std=gnu99 
-LFLAGS=-D_GNU_SOURCE=1 -ldl -lcurl
+CFLAGS=-W -Wall -fPIC -I./include -ggdb -std=gnu99 $(OPTARGS) 
+LFLAGS=-D_GNU_SOURCE=1 -ldl -lcurl $(OPTARGS)
 
 EXEC=../bin/filenotify
 SRC= $(wildcard *.c)

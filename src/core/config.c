@@ -51,17 +51,11 @@ get_config(char *key)
  * \brief display all config in memory
  */
 void
-display_allconfig(struct nlist *list[])
+display_allconfig(struct nlist *list)
 {
-	struct nlist *np;
-	for (int i = 0; i < HASHSIZE; i++)
-	{
-		for (np = list[i]; np != NULL; np = np->next)
-		{
-			if(np != NULL) {
-				log_msg("INFO", " Config : %s=%s ", np->name, np->defn);
-			}
-		}
+	struct nlist *np = list;
+        for(np = list; np != NULL; np = np->next) {
+		log_msg("INFO", " Config : %s=%s ", np->name, np->defn);
 	}
 }
 
@@ -69,29 +63,19 @@ display_allconfig(struct nlist *list[])
  * \fn void get_configs()
  * \brief return list of config who contains prefix
  */
-struct nlist **
-get_configs(struct nlist *list[], char *prefix)
+struct nlist *
+get_configs(struct nlist *list, char *prefix)
 {
-	struct nlist **configs;
-	configs = (struct nlist **) malloc(sizeof(struct nlist *) * HASHSIZE);
-	if ( !configs ) {
-		return NULL;
-	}
-	for (size_t i = 0; i < HASHSIZE; ++i) {
-		configs[i] = NULL;
-	}
-	struct nlist *np;
+	struct nlist *configs = NULL;
 
-	for (int i = 0; i < HASHSIZE; i++)
-	{
-		for (np = list[i]; np != NULL; np = np->next)
-		{
-			if(strncmp(np->name, prefix, strlen(prefix)) == 0) {
-				char *new_name=np->name + sizeof(char)*strlen(prefix);
-				install(configs, new_name, np->defn);
-			}
+	struct nlist *np;
+        for(np = list; np != NULL; np = np->next) {
+		if(strncmp(np->name, prefix, strlen(prefix)) == 0) {
+			// calculate the new name with decal prefix
+			char *new_name=np->name + sizeof(char)*strlen(prefix);
+			configs = install(configs, new_name, np->defn);
+		}
         }
-	}
 
  	return configs;
 }
@@ -101,16 +85,17 @@ get_configs(struct nlist *list[], char *prefix)
  * \brief load all config file in config structure
  * \return 1 in case of success
  */
-int
-loadConfig (struct nlist **config_ptr, char *configFilePath)
+struct nlist *loadConfig (char *configFilePath)
 {
+	struct nlist *config_ptr = NULL;
+
 	FILE *configFile = NULL;
 	configFile = fopen(configFilePath,  "r");
 	char configLine[TAILLE_MAX] = "";
 
 	if (configFile == NULL) {
 		log_msg("ERROR", "Failed to open config file : %s", configFilePath);
-		return 255;
+		return NULL;
 	}
 
 	while (fgets(configLine, TAILLE_MAX, configFile) != NULL)
@@ -129,11 +114,11 @@ loadConfig (struct nlist **config_ptr, char *configFilePath)
 			value[0]='\0';
 			// on enleve le =
 			value = value+1;
-			install(config_ptr, configLine, value);
+			config_ptr = install(config_ptr, configLine, value);
 		}
 	}
 
 	fclose(configFile);
 
-	return 0;
+	return config_ptr;
 }
