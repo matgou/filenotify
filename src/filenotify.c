@@ -178,7 +178,7 @@ struct directory *watchInotifyDirectory()
 			closedir(d);
 		}
 	}
-	free_nlist(watch_directories);
+	nlist_free(watch_directories);
 	return dir;
 }
 
@@ -269,6 +269,20 @@ struct plugins *loadPlugins()
 		plugins_lst_ptr = malloc(sizeof(struct plugins));
 		plugins_lst_ptr->next=plugins_lst_save;
 		plugins_lst_ptr->func_handle = dlsym(plugin, "handle_event");
+		if (!plugins_lst_ptr->func_handle) {
+                        /* no such symbol */
+                        log_msg("ERROR", "Error: %s", dlerror());
+                        dlclose(plugin);
+                        exit(EXIT_FAILURE);
+                }
+		plugins_lst_ptr->func_terminate = dlsym(plugin, "terminate_plugin");
+		if (!plugins_lst_ptr->func_terminate) {
+                        /* no such symbol */
+                        log_msg("ERROR", "Error: %s", dlerror());
+                        dlclose(plugin);
+                        exit(EXIT_FAILURE);
+                }
+
 		plugins_lst_ptr->plugin = plugin;
 		plugins_lst_ptr->plugin_name = plugin_name;
 		if (!plugins_lst_ptr->func_handle) {
@@ -279,7 +293,7 @@ struct plugins *loadPlugins()
 		}
 	}
 
-	free_nlist(plugins_config);
+	nlist_free(plugins_config);
 	return plugins_lst_ptr;
 }
 
@@ -292,34 +306,25 @@ void sig_handler(int signo)
 	if (signo == SIGUSR1) {
 		log_msg("INFO", "received SIGUSR1");
 
-		struct nlist *config_new;
-		struct plugins *plugins_lst_new;
-		struct nlist *config_save = config;
-		struct plugins *plugins_lst_save = plugins_lst;
-		struct directory *directories_new;
-		struct directory *directories_save = directories;
-		// Init new config and load file into it
-		config_new = NULL;
-		if((config_new = loadConfig(configFilePath)) == 0) {
+		// free old plugins
+		free_plugins(plugins_lst);
+		// free old directories
+		free_directories(directories);
+		// free old config
+		nlist_free(config);
+
+		// Switch config
+		if((config = loadConfig(configFilePath)) == 0) {
 			fprintf (stderr, "Critical error while loading config, exit\n");
 			exit(EXIT_FAILURE);
 		}
-		// Switch config
-		config = config_new;
-		// free old config
-		free_nlist(config_save);
+
 		// Display config
 		display_allconfig(config);
 
 		// Init and load new plugin list
-		plugins_lst_new = loadPlugins();
-		plugins_lst=plugins_lst_new;
-		// free old plugins
-		free_plugins(plugins_lst_save);
-
-		directories_new = watchInotifyDirectory();
-		directories=directories_new;
-		free_directories(directories_save);
+		plugins_lst = loadPlugins();
+		directories = watchInotifyDirectory();
 	} else if (signo == SIGUSR2) {
 		log_msg("INFO", "received SIGUSR2");
 	} else if (signo == SIGINT) {
@@ -355,6 +360,7 @@ void free_plugins(struct plugins *l) {
 			free_plugins(l->next);
 		}
 		log_msg("DEBUG", "Close plugin : %s", l->plugin_name);
+		l->func_terminate();
 		dlclose(l->plugin);
 		free(l->plugin_name);
 		free(l);
@@ -368,7 +374,7 @@ void free_plugins(struct plugins *l) {
 void prg_exit(int code) {
 	free_directories(directories);
 	free_plugins(plugins_lst);
-	free_nlist(config);
+	nlist_free(config);
 	exit(code);
 }
 

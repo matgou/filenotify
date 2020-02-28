@@ -30,9 +30,22 @@
 #include <config.h>
 #include <log.h>
 
+/**
+ * \fn void init_plugin()
+ * \brief Initialise the plugin 
+ */
 void init_plugin(struct nlist *config_ref)
 {
-	config = config_ref;
+	config = nlist_dup(config_ref);
+}
+
+/**
+ * \fn void terminate_plugin()
+ * \brief free alloc mem
+ */
+void terminate_plugin()
+{
+	nlist_free(config);
 }
 
 /**

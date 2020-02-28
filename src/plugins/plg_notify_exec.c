@@ -33,16 +33,24 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-
 /**
  * \fn void init_plugin()
- * \brief initialise un Plugins
+ * \brief Initialise the plugin 
  */
-void
-init_plugin(struct nlist *config_ref)
+void init_plugin(struct nlist *config_ref)
 {
-		config = config_ref;
+        config = nlist_dup(config_ref);
 }
+
+/**
+ * \fn void terminate_plugin()
+ * \brief free alloc mem
+ */
+void terminate_plugin()
+{
+        nlist_free(config);
+}
+
 
 /**
  * \fn void handle_event()
@@ -57,6 +65,7 @@ void handle_event(struct directory *dir, const struct inotify_event *event)
 	log_msg("DEBUG", "handle - plg_notify_exec");
 	char *value;
 	/* Print event type */
+	value="";
 	if (event->mask & IN_OPEN) {
 		value="1";
 	}

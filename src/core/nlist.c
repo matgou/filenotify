@@ -22,6 +22,26 @@
 #include <string.h>
 
 /**
+ * \fn struct nlist *nlist_dup()
+ * \brief duplicate a nlist object
+ * \return fist list element
+ */
+struct nlist *nlist_dup(struct nlist *list)
+{
+	if(list != NULL) {
+		// Duplicate list element
+		struct nlist *l = malloc(sizeof(struct nlist));
+		l->name = strdup(list->name);
+		l->defn = strdup(list->defn);
+		l->next = nlist_dup(list->next);	
+		return l;
+	}
+	
+	// If list is NULL
+	return NULL;
+}
+
+/**
  * \fn unsigned lookup()
  * \brief look for a string in nlist
  * \return list element
@@ -72,14 +92,14 @@ struct nlist *install(struct nlist *list, char *name, char *defn)
 }
 
 /**
- * \fn void free_nlist()
+ * \fn void nlist_free()
  * \brief free a nlist object
  */
-void free_nlist(struct nlist *l) {
+void nlist_free(struct nlist *l) {
 	// recursive
 	if(l != NULL) {
 		if(l->next != NULL) {
-			free_nlist(l->next);
+			nlist_free(l->next);
 			l->next=NULL;
 		}
 		// free object

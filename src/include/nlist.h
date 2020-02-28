@@ -26,8 +26,9 @@ struct nlist { /* table entry: */
 };
 
 /* lookup: look for s in hashtab */
+struct nlist *nlist_dup(struct nlist *list);
 struct nlist *lookup(struct nlist *list, char *s);
 struct nlist *install(struct nlist *list, char *name, char *defn);
-void free_nlist(struct nlist *l);
+void nlist_free(struct nlist *l);
 
 #endif

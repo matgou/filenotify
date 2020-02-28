@@ -27,6 +27,7 @@
 #include <sys/inotify.h>
 #include <filenotify.h>
 #include <plg_notify.h>
+#include <nlist.h>
 #include <config.h>
 #include <log.h>
 #include <string.h>
@@ -43,6 +44,15 @@ static CURLcode (*f_perform)(CURL *) = NULL;
 static void (*f_cleanup)(CURL *) = NULL;
 
 /**
+ * \fn void terminate_plugin()
+ * \brief free alloc mem
+ */
+void terminate_plugin()
+{
+        nlist_free(config);
+}
+
+/**
  * \fn void init_plugin()
  * \brief initialise un Plugins
  */
@@ -50,7 +60,7 @@ void
 init_plugin(struct nlist *config_ref)
 {
     char *error;
-    config = config_ref;
+    config = nlist_dup(config_ref);
 
     curl_handle = dlopen ("libcurl.so.3", RTLD_LAZY);
     if(curl_handle == NULL) {

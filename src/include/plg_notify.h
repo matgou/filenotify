@@ -23,6 +23,7 @@
 
 // Function list
 void init_plugin(struct nlist *config_ref);
+void terminate_plugin();
 void handle_event(struct directory *dir, const struct inotify_event *event);
 
 #endif
