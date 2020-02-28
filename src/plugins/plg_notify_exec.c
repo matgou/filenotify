@@ -37,7 +37,7 @@
  * \fn void init_plugin()
  * \brief Initialise the plugin 
  */
-void init_plugin(struct nlist *config_ref)
+void init_plugin(char *p_name, struct nlist *config_ref)
 {
         config = nlist_dup(config_ref);
 }
@@ -56,11 +56,22 @@ void terminate_plugin()
  * \fn void handle_event()
  * \brief Write log from received event
  */
-void handle_event(struct directory *dir, const struct inotify_event *event)
+void handle_event(char *p_name, struct directory *dir, const struct inotify_event *event)
 {
         if (event->mask & IN_ISDIR) {
                 return;
         }
+
+        /* Concat p_name and .cmd to build a config_cmd */
+        int config_cmd_len = strlen(".cmd") + strlen(p_name) + 1;
+        char *config_cmd = malloc(sizeof(char) * config_cmd_len);
+        strcpy(config_cmd, p_name);
+        strcat(config_cmd, ".cmd");
+        config_cmd[config_cmd_len - 1] = '\0';
+	if(get_config(config_cmd) == NULL) {
+		log_msg("ERROR","Unable to find '%s' key in config file", config_cmd);
+		return ;
+	}
 
 	log_msg("DEBUG", "handle - plg_notify_exec");
 	char *value;
@@ -89,8 +100,8 @@ void handle_event(struct directory *dir, const struct inotify_event *event)
         }
 
 
-	char *cmd = malloc(sizeof(char) * (strlen(get_config("exec.cmd")) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1));
-	sprintf(cmd, get_config("exec.cmd"), dir->name, event->name, value);
+	char *cmd = malloc(sizeof(char) * (strlen(get_config(config_cmd)) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1));
+	sprintf(cmd, get_config(config_cmd), dir->name, event->name, value);
 	log_msg("DEBUG", "EXECUTE CMD: %s", cmd);
         char *args[]={"/bin/bash","-c",cmd,NULL};
 	pid_t pid = fork();
@@ -105,6 +116,7 @@ void handle_event(struct directory *dir, const struct inotify_event *event)
 		}
 		exit(EXIT_SUCCESS);
 	}
+	free(config_cmd);
 	free(cmd);
 	//	log_msg("INFO", "[%s] %s : %s/%s %s", type, dir->key, dir->name, event->name, isdir);
 }

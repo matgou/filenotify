@@ -122,7 +122,7 @@ void handle_events()
 			if(dir != NULL) {
 				struct plugins *plugins_lst_it = plugins_lst;
                 		for (plugins_lst_it = plugins_lst; plugins_lst_it != NULL; plugins_lst_it = plugins_lst_it->next) {
-					plugins_lst_it->func_handle(dir, event);
+					plugins_lst_it->func_handle(plugins_lst_it->p_name, dir, event);
 				}
             		}
 		}
@@ -170,7 +170,7 @@ struct directory *watchInotifyDirectory()
 	                                struct plugins *plugins_lst_it = plugins_lst;
 					log_msg("INFO", "Presence initiale du fichier : %s/%s (%i) (%i)", dir->name, event->name, strlen(event->name), strlen(dir->name));
         	                        for (plugins_lst_it = plugins_lst; plugins_lst_it != NULL; plugins_lst_it = plugins_lst_it->next) {
-                	                        plugins_lst_it->func_handle(dir, event);
+                	                        plugins_lst_it->func_handle(plugins_lst_it->p_name, dir, event);
                         	        }
 					free(event);
 				}
@@ -236,7 +236,7 @@ struct plugins *loadPlugins()
 	struct plugins *plugins_lst_ptr = NULL;
 	struct nlist *plugins_config;
 	struct nlist *np;
-	void (*func_init)(struct nlist *config);
+	void (*func_init)(char *p_name, struct nlist *config);
 
 	/* determine all plugins to load */
 	plugins_config=get_configs(config, "plugins.");
@@ -264,7 +264,7 @@ struct plugins *loadPlugins()
 		}
 
 		// Init du plugins
-		func_init(config);
+		func_init(np->name, config);
 		struct plugins *plugins_lst_save = plugins_lst_ptr;
 		plugins_lst_ptr = malloc(sizeof(struct plugins));
 		plugins_lst_ptr->next=plugins_lst_save;
@@ -285,6 +285,7 @@ struct plugins *loadPlugins()
 
 		plugins_lst_ptr->plugin = plugin;
 		plugins_lst_ptr->plugin_name = plugin_name;
+		plugins_lst_ptr->p_name = strdup(np->name);
 		if (!plugins_lst_ptr->func_handle) {
 			/* no such symbol */
 			log_msg("ERROR", "Error: %s", dlerror());
@@ -362,6 +363,7 @@ void free_plugins(struct plugins *l) {
 		log_msg("DEBUG", "Close plugin : %s", l->plugin_name);
 		l->func_terminate();
 		dlclose(l->plugin);
+		free(l->p_name);
 		free(l->plugin_name);
 		free(l);
 	}

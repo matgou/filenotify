@@ -34,7 +34,7 @@
  * \fn void init_plugin()
  * \brief Initialise the plugin 
  */
-void init_plugin(struct nlist *config_ref)
+void init_plugin(char *p_name, struct nlist *config_ref)
 {
 	config = nlist_dup(config_ref);
 }
@@ -52,7 +52,7 @@ void terminate_plugin()
  * \fn void handle_event()
  * \brief Write log from received event
  */
-void handle_event(struct directory *dir, const struct inotify_event *event)
+void handle_event(char *p_name, struct directory *dir, const struct inotify_event *event)
 {
         if (event->mask & IN_ISDIR) {
                 return;
@@ -90,8 +90,8 @@ void handle_event(struct directory *dir, const struct inotify_event *event)
 		isdir=" [file]";
 	}
 	if (event->len) {
-		log_msg("INFO", "[%s] %s : %s/%s %s", type, dir->key, dir->name, event->name, isdir);
+		log_msg("INFO", "[%s][%s] %s : %s/%s %s", p_name, type, dir->key, dir->name, event->name, isdir);
 	} else {
-		log_msg("INFO", "[%s] %s : %s/ %s", type, dir->key, dir->name, isdir);
+		log_msg("INFO", "[%s][%s] %s : %s/ %s", p_name, type, dir->key, dir->name, isdir);
 	}
 }

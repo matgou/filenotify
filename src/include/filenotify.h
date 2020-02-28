@@ -32,7 +32,8 @@ struct plugins {
 	struct plugins *next;
 	void *plugin;
 	char *plugin_name;
-	void (*func_handle)(struct directory *dir, const struct inotify_event *event);
+        char *p_name;
+	void (*func_handle)(char *p_name, struct directory *dir, const struct inotify_event *event);
 	void (*func_terminate)();
 };
 struct plugins *plugins_lst;
