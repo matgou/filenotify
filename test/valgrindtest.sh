@@ -71,8 +71,8 @@ then
         echo "ERROR : ne trouve pas __coucou__ dans le fichier de log."
         global_rc=1
 fi
-
-echo "watch_directory.1=/tmp/test-$( basename $0 )-3" >> ${config}
+cat $config
+echo "watch_directory.3=/tmp/test-$( basename $0 )-3" >> ${config}
 sleep 1
 kill -10 "${pid}"
 sleep 1
