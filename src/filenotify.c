@@ -39,6 +39,7 @@
 #include <poll.h>
 #include <dlfcn.h>
 #include <signal.h>
+__asm__(".symver memcpy,memcpy@GLIBC_2.2.5");
 
 
 /**
