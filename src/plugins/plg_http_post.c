@@ -42,6 +42,7 @@ static CURL *curl;
 static CURL *(*f_init)(void) = NULL;
 static CURLcode (*f_setopt)(CURL *, CURLoption, ...) = NULL;
 static CURLcode (*f_perform)(CURL *) = NULL;
+const char *(*f_strerror)(CURLcode errornum);
 static void (*f_cleanup)(CURL *) = NULL;
 
 /**
@@ -100,6 +101,11 @@ init_plugin(char *p_name, struct nlist *config_ref)
 		log_msg("ERROR", "plg_http_post(%s) when load curl_easy_cleanup : %s", error);
 		curl_init=0;
 	    }
+            f_strerror = dlsym(curl_handle, "curl_easy_strerror");
+            if ((error = dlerror()) != NULL)  {
+                log_msg("ERROR", "plg_http_post(%s) when load curl_easy_cleanup : %s", error);
+                curl_init=0;
+            }
     }
 }
 
@@ -194,7 +200,7 @@ void handle_event(char *p_name, struct directory *dir, const struct inotify_even
 		res = (*f_perform)(curl);
 		/* Check for errors */
 		if(res != CURLE_OK) {
-			log_msg("ERROR", "curl_easy_perform() failed: %s", curl_easy_strerror(res));
+			log_msg("ERROR", "curl_easy_perform() failed: %s", (*f_strerror)(res));
 		}
 		/* always cleanup */
 		free(config_url);
