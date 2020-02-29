@@ -1,0 +1,13 @@
+[Unit]
+Description=Filenotify File Monitoring Agent
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/var/run/filenotify.pid
+ExecStart=/usr/bin/filenotify -c /etc/filenotify/filenotify.config -i /var/run/filenotify.pid -d
+ExecReload=kill -10 $( /var/run/filenotify.pid )
+ExecStop=kill $( cat /var/run/filenotify.pid )
+
+[Install]
+WantedBy=multi-user.target
