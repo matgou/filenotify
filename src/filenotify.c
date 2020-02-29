@@ -475,9 +475,12 @@ int main(int argc, char *argv[])
 	}
 
 	/*
-	Store pid in file
+	If in the parent process
 	 */
 	if(filenotify_pid_filepath != NULL && pid > 0) {
+	/*
+	Store pid in file
+	 */
 		log_msg("INFO", "Store pid in : %s", filenotify_pid_filepath);
 		FILE *filenotify_pid_file;
 		if((filenotify_pid_file = fopen(filenotify_pid_filepath, "w")) == NULL) {
@@ -486,6 +489,14 @@ int main(int argc, char *argv[])
 			fprintf(filenotify_pid_file, "%d", pid); 
 			fclose(filenotify_pid_file);
 		}
+	}
+	/*
+	If in the child process
+	*/
+	if(pid <= 0) {
+		fclose(stdin);
+		fclose(stdout);
+		fclose(stderr);
 	}	
 	/*
 	If pid > 0, in parent process
