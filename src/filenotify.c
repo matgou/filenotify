@@ -39,6 +39,8 @@
 #include <poll.h>
 #include <dlfcn.h>
 #include <signal.h>
+
+// This is a hook to use older memcpy to keep compatibilty with older linux
 __asm__(".symver memcpy,memcpy@GLIBC_2.2.5");
 
 
@@ -53,6 +55,8 @@ displayHelp ()
 	fprintf(stdout, "Usage : filenotify -c [config] \n");
 	fprintf(stdout, "Options :\n");
 	fprintf(stdout, "  -c [config]                        Configuration file\n");
+	fprintf(stdout, "  -i [pid_file]                      File to store pid\n");
+	fprintf(stdout, "  -d                                 Daemon mode (detach)\n");
 }
 
 /**
@@ -315,7 +319,7 @@ void sig_handler(int signo)
 		nlist_free(config);
 
 		// Switch config
-		if((config = loadConfig(configFilePath)) == 0) {
+		if((config = loadConfig(filenotify_config_file)) == 0) {
 			fprintf (stderr, "Critical error while loading config, exit\n");
 			exit(EXIT_FAILURE);
 		}
@@ -387,16 +391,33 @@ void prg_exit(int code) {
 int main(int argc, char *argv[])
 {
 	int c;
+	// by default no fork
+	int filenotify_daemon_mode=0;
+	// The pid of daemon
+	int pid = getpid();
 
-	while ((c = getopt (argc, argv, "c:")) != -1) {
+	while ((c = getopt (argc, argv, "c:i:d")) != -1) {
 		switch (c)
 		{
 			case 'c':
-				configFilePath = optarg;
-				if(configFilePath == NULL) {
+				// Store config file path
+				filenotify_config_file = optarg;
+				if(filenotify_config_file == NULL) {
 					displayHelp();
 					return 255;
 				}
+				break;
+			case 'i':
+				// Store pid file path
+				filenotify_pid_filepath = optarg;
+				if(filenotify_config_file == NULL) {
+                                        displayHelp();
+                                        return 255;
+                                }
+                                break;
+			case 'd':
+				// Fork
+				filenotify_daemon_mode=1;
 				break;
 			case '?':
 				if (optopt == 'c') {
@@ -416,7 +437,7 @@ int main(int argc, char *argv[])
 	}
 	config = NULL;
 
-	if((config = loadConfig(configFilePath)) == 0) {
+	if((config = loadConfig(filenotify_config_file)) == 0) {
 		fprintf (stderr, "Critical error while loading config, exit\n");
 		displayHelp();
 		return 255;
@@ -425,6 +446,9 @@ int main(int argc, char *argv[])
 	plugins_lst = loadPlugins();
 	displayWelcome();
 
+	/*
+	Configure to trap all signal
+	 */
 	if (signal(SIGUSR1, sig_handler) == SIG_ERR) {
 		log_msg("ERROR", "can't catch SIGUSR1");
 	}
@@ -436,6 +460,38 @@ int main(int argc, char *argv[])
 	}
 	if (signal(SIGTERM, sig_handler) == SIG_ERR) {
 		log_msg("ERROR", "can't catch SIGTERM");
+	}
+
+	/*
+	Manage if daemon mode is enable
+	 */
+	if(filenotify_daemon_mode) {
+		int ppid = fork();
+		if(ppid > 0) {
+			pid=ppid;
+		} else {
+			pid=0;
+		}
+	}
+
+	/*
+	Store pid in file
+	 */
+	if(filenotify_pid_filepath != NULL && pid > 0) {
+		log_msg("INFO", "Store pid in : %s", filenotify_pid_filepath);
+		FILE *filenotify_pid_file;
+		if((filenotify_pid_file = fopen(filenotify_pid_filepath, "w")) == NULL) {
+			log_msg("ERROR", "can't open pid file path for writing");
+		} else {
+			fprintf(filenotify_pid_file, "%d", pid); 
+			fclose(filenotify_pid_file);
+		}
+	}	
+	/*
+	If pid > 0, in parent process
+	 */
+	if(filenotify_daemon_mode && pid > 0) {
+		return 0;
 	}
 	return mainLoop();
 }

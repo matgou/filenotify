@@ -50,6 +50,10 @@ void free_directories(struct directory *l);
 void free_plugins(struct plugins *l);
 void prg_exit(int code);
 void sig_handler(int signo);
-char *configFilePath;
+
+// Ptr to store string of config file path
+char *filenotify_config_file;
+// Ptr to store string of pid file path
+char *filenotify_pid_filepath;
 
 #endif
