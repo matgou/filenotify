@@ -16,12 +16,20 @@ docker: package filenotify.tar.gz
 
 filenotify.tar.gz: package
 
+install:
+	systemctl stop filenotify
+	[ -f /etc/filenotify/filenotify.config ] ||  cp -v filenotify.config /etc/filenotify/
+	cp -v bin/$(EXEC) /usr/bin/ 
+	mkdir -p /var/lib/filenotify/
+	cp bin/*.so /var/lib/filenotify/
+	systemctl start filenotify
+
 package: bin/$(EXEC)
-	mkdir -p package/etc/filenotify package/usr/bin package/usr/lib/filenotify
+	mkdir -p package/etc/filenotify package/usr/bin package/var/lib/filenotify
 	cp filenotify.config package/etc/filenotify/
 	cp bin/$(EXEC) package/usr/bin/ 
-	cp bin/*.so package/usr/lib/filenotify/
-	tar -czvf filenotify.tar.gz -C package usr etc
+	cp bin/*.so package/var/lib/filenotify/
+	tar -czvf filenotify.tar.gz -C package usr etc var
 
 clean:
 	make -C src clean
