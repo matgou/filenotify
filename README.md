@@ -12,7 +12,7 @@ You can download binary from this link : [filenotify.tar.gz](https://framagit.or
 Use Make to build and install the binarny
 
 ```bash
-make
+make && sudo make install
 ```
 ## Exemple of usage 
 
