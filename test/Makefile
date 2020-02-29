@@ -2,4 +2,4 @@
 # 
 all:
 	sh logtest.sh 
-	sh valgrindtest.sh
+	sh relad-test.sh
