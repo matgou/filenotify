@@ -51,7 +51,10 @@ static void (*f_cleanup)(CURL *) = NULL;
  */
 void terminate_plugin()
 {
-        nlist_free(config);
+	if(config != NULL) {
+	        nlist_free(config);
+		config = NULL;
+	}
 }
 
 /**

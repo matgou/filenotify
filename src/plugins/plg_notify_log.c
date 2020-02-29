@@ -45,7 +45,10 @@ void init_plugin(char *p_name, struct nlist *config_ref)
  */
 void terminate_plugin()
 {
-	nlist_free(config);
+	if(config != NULL) {
+		nlist_free(config);
+		config = NULL;
+	}
 }
 
 /**
