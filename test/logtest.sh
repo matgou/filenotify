@@ -1,6 +1,7 @@
 #!/bin/env sh
 cd $( dirname $0 ) 
 config=$( basename $0 ).config
+pid=/tmp/$( basename $0 ).pid
 global_rc=0
 
 mkdir /tmp/test-$( basename $0 )-1
@@ -17,14 +18,13 @@ plugins_dir=../bin/
 plugins.log=plg_notify_log.so
 EOF
 
-../bin/filenotify -c ${config} &
-pid=$!
+../bin/filenotify -c ${config} -i $pid -d
 
-sleep 5
+sleep 2
 echo "hello world" > /tmp/test-$( basename $0 )-1/test1-hello
 echo "hello world" > /tmp/test-$( basename $0 )-2/test2-hello
 
-sleep 10
+sleep 1
 
 grep -q test1-hello /tmp/$( basename $0 ).log
 grep_rc=$?
@@ -43,7 +43,7 @@ then
 fi
 
 
-kill ${pid}
+kill $( cat ${pid} )
 
 rm -rvf /tmp/$( basename $0 ).log ${config} /tmp/test-$( basename $0 )-1 /tmp/test-$( basename $0 )-2
 exit $global_rc
