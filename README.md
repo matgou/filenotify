@@ -2,9 +2,11 @@
 
 Filenotify is a binary tools for monitoring filesystem modification and store event in influxdb.
 
+
 ## Donwload
 
 You can download binary from this link : [filenotify.tar.gz](https://framagit.org/matgou/filenotify/-/jobs/artifacts/master/raw/filenotify.tar.gz?job=build)
+
 ## Installation
 
 Use Make to build and install the binarny
@@ -12,11 +14,18 @@ Use Make to build and install the binarny
 ```bash
 make
 ```
+## Exemple of usage 
 
-## Usage
+### A Influx/Grafana dashboard of file status
+
+With the filenotify daemon, you can store file's status in influxdb and build Grafana dashboard to visualise file in directory.
+
+![influxgrafanascreenshot](https://framagit.org/matgou/filenotify/-/raw/master/docs/influx_grafana_screenshot.png?inline=false)
+
+## General usage
 
 ```bash
-bin/filenotify -c filenotify.config
+bin/filenotify -c filenotify.config -d
 ```
 
 Filenotify will listen kernel's inotify event to do some stuff when file creating or deleting.
