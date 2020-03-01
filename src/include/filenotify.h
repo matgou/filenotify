@@ -56,6 +56,7 @@ void filenotify_handleevents();
 int filenotify_mainloop();
 plugin_t *filenotify_loadplugins();
 directory_t *filenotify_subscribedirectory();
+void filenotify_execplugins(directory_t *dir, const struct inotify_event *event);
 
 // To free directory list chain
 void filenotify_directory_free(directory_t *l);
