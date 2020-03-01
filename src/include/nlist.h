@@ -20,19 +20,19 @@
 #define nlist_h
 
 /**
- * \struct nlist nlist.h
+ * \struct nlist_t nlist.h
  * \brief A object to store simple key-value list
  */
-struct nlist { /* table entry: */
-    struct nlist *next; /* next entry in chain */
-    char *name; /* defined name */
-    char *defn; /* replacement text */
-};
+typedef struct {
+    void *next; /*!< Ptr to the next entry of chain. */
+    char *name; /*!< key / name, string to identify the name of the parameters */
+    char *defn; /*!< The definition value */
+} nlist_t;
 
 /* Function list */
-struct nlist *nlist_dup(struct nlist *list);
-struct nlist *lookup(struct nlist *list, char *s);
-struct nlist *install(struct nlist *list, char *name, char *defn);
-void nlist_free(struct nlist *l);
+nlist_t *nlist_dup(nlist_t *list);
+nlist_t *lookup(nlist_t *list, char *s);
+nlist_t *install(nlist_t *list, char *name, char *defn);
+void nlist_free(nlist_t *l);
 
 #endif

@@ -23,13 +23,13 @@
 #define CONFIG_DIR "etc/"
 #define TAILLE_MAX 1000
 
-struct nlist *config;
+nlist_t *config;
 
-struct nlist *config_loadfromfile (char *configFilePath);
+nlist_t *config_loadfromfile (char *configFilePath);
 void freeconfig ();
-struct nlist *save_config(char *key, char* value);
+nlist_t *save_config(char *key, char* value);
 char *config_getbykey(char *key);
-void config_displayall(struct nlist *list);
-struct nlist *config_getbyprefix(struct nlist *list, char *prefix);
+void config_displayall(nlist_t *list);
+nlist_t *config_getbyprefix(nlist_t *list, char *prefix);
 
 #endif

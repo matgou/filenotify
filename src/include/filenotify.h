@@ -19,41 +19,51 @@
 #ifndef filenotify_h
 #define filenotify_h
 
+/**
+ * \struct directory_t
+ * \brief a object to store directory monitrored by filenotify
+ */
+typedef struct { 
+	char *name; /*!< the directory name */
+	char *key;  /*!< the directory key (in config) */
+	int wd;     /*!< the inotify descriptor */
+	int number; /*!< the number of the directory */
+	void *next; /*!< ptr to the next directory */
+} directory_t;
 
-struct directory { /* table entry: */
-	char *name; /* directory name */
-	char *key;  /* directory key */
-	int wd;     /* inotify descriptor */
-	int number; /* number of directory */
-	struct directory *next;
-};
+/**
+ * \struct plugin_t
+ * \brief a object to store plugin call after file modification
+ */
+typedef struct {
+	void *next; /*!< ptr to the next plugin */
+	void *plugin; /*!< ptr to the plugin object after dlopen */
+	char *plugin_name; /*!< the plugin file name (so file) */
+        char *p_name; /*!< the plugin name from configfile */
+	void (*func_handle)(char *p_name, directory_t *dir, const struct inotify_event *event); /*!< ptr to the function to call after inotify event */
+	void (*func_terminate)(); /*!< ptr to the function to call when close plugin */
+} plugin_t;
 
-struct plugins {
-	struct plugins *next;
-	void *plugin;
-	char *plugin_name;
-        char *p_name;
-	void (*func_handle)(char *p_name, struct directory *dir, const struct inotify_event *event);
-	void (*func_terminate)();
-};
-struct plugins *plugins_lst;
-struct directory *directories;
+plugin_t *plugins_lst;
+directory_t *directories;
 int inotify_fd;
 
 // Function list
 int main(int argc, char *argv[]);
-void displayWelcome();
-void displayHelp();
-void handle_events();
-int mainLoop();
+void filenotify_displaywelcome();
+void filenotify_displayhelp();
+void filenotify_handleevents();
+int filenotify_mainloop();
+plugin_t *filenotify_loadplugins();
+directory_t *filenotify_subscribedirectory();
 
 // To free directory list chain
-void filenotify_directory_free(struct directory *l);
+void filenotify_directory_free(directory_t *l);
 // To free plugin list chain
-void filenotify_plugins_free(struct plugins *l);
+void filenotify_plugins_free(plugin_t *l);
 
-void prg_exit(int code);
-void sig_handler(int signo);
+void filenotify_exit(int code);
+void filenotify_sighandler(int signo);
 
 // Ptr to store string of config file path
 char *filenotify_config_file;

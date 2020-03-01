@@ -60,13 +60,13 @@ void terminate_plugin()
 }
 
 /**
- * \fn void init_plugin(char *p_name, struct nlist *config_ref)
+ * \fn void init_plugin(char *p_name, nlist_t *config_ref)
  * \brief initialise the plugins by charging config and loading curl as dynamic library
  * \param p_name the plugin name
  * \param config_ref the configuration
  */
 void
-init_plugin(char *p_name, struct nlist *config_ref)
+init_plugin(char *p_name, nlist_t *config_ref)
 {
 	// Duplicate config to keepit in memory
 	config = nlist_dup(config_ref);
@@ -122,13 +122,13 @@ init_plugin(char *p_name, struct nlist *config_ref)
 }
 
 /**
- * \fn void handle_event(char *p_name, struct directory *dir, const struct inotify_event *event)
+ * \fn void handle_event(char *p_name, directory_t *dir, const struct inotify_event *event)
  * \brief Handle a event and write it by post request in api
  * \param p_name the plugin name use to get config
  * \param dir the directory who emit the event
  * \param event the inotify event
  */
-void handle_event(char *p_name, struct directory *dir, const struct inotify_event *event)
+void handle_event(char *p_name, directory_t *dir, const struct inotify_event *event)
 {
 
 	if (event->mask & IN_ISDIR) {

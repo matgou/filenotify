@@ -36,7 +36,7 @@
  */
 char *config_getbykey(char *key)
 {
-	struct nlist *ptr = lookup(config, key);
+	nlist_t *ptr = lookup(config, key);
 	if(ptr != NULL)
 	{
 		return ptr->defn;
@@ -45,31 +45,31 @@ char *config_getbykey(char *key)
 }
 
 /**
- * \fn void config_displayall(struct nlist *list)
+ * \fn void config_displayall(nlist_t *list)
  * \brief use log_msg to display (INFO) all key-value from a config-nlist
  * \param list the list-config to display
  */
 void
-config_displayall(struct nlist *list)
+config_displayall(nlist_t *list)
 {
-	struct nlist *np = list;
+	nlist_t *np = list;
         for(np = list; np != NULL; np = np->next) {
 		log_msg("INFO", " Config : %s=%s ", np->name, np->defn);
 	}
 }
 
 /**
- * \fn void config_getbyprefix(struct nlist *list, char *prefix)
+ * \fn void config_getbyprefix(nlist_t *list, char *prefix)
  * \brief return a new nlist(key-value) from a config, this function filter config from prefix. 
  * \param list the initial list to filter
  * \param prefix the prefix used to filter
  */
-struct nlist *
-config_getbyprefix(struct nlist *list, char *prefix)
+nlist_t *
+config_getbyprefix(nlist_t *list, char *prefix)
 {
-	struct nlist *configs = NULL;
+	nlist_t *configs = NULL;
 
-	struct nlist *np;
+	nlist_t *np;
         for(np = list; np != NULL; np = np->next) {
 		if(strncmp(np->name, prefix, strlen(prefix)) == 0) {
 			// calculate the new name with decal prefix
@@ -82,14 +82,14 @@ config_getbyprefix(struct nlist *list, char *prefix)
 }
 
 /**
- * \fn struct nlist *config_loadfromfile (char *config_filepath)
+ * \fn nlist_t *config_loadfromfile (char *config_filepath)
  * \brief Load all config from a file and return a nlist-config
  * \param config_filepath a string to identify config_filepath
  * \return the nlist with value from file
  */
-struct nlist *config_loadfromfile (char *config_filepath)
+nlist_t *config_loadfromfile (char *config_filepath)
 {
-	struct nlist *config_ptr = NULL;
+	nlist_t *config_ptr = NULL;
 
 	FILE *config_file = NULL;
 	config_file = fopen(config_filepath,  "r");

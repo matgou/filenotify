@@ -39,7 +39,7 @@
  * \fn void init_plugin()
  * \brief Initialise the plugin 
  */
-void init_plugin(char *p_name, struct nlist *config_ref)
+void init_plugin(char *p_name, nlist_t *config_ref)
 {
         config = nlist_dup(config_ref);
 	log_msg("DEBUG", "Init plugins : plg_notify_exec(%s)", p_name);
@@ -62,7 +62,7 @@ void terminate_plugin()
  * \fn void handle_event()
  * \brief Write log from received event
  */
-void handle_event(char *p_name, struct directory *dir, const struct inotify_event *event)
+void handle_event(char *p_name, directory_t *dir, const struct inotify_event *event)
 {
         if (event->mask & IN_ISDIR) {
                 return;

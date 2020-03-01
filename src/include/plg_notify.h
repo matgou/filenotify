@@ -22,8 +22,8 @@
 
 
 // Function list
-void init_plugin(char *p_name, struct nlist *config_ref);
-void handle_event(char *p_name, struct directory *dir, const struct inotify_event *event);
+void init_plugin(char *p_name, nlist_t *config_ref);
+void handle_event(char *p_name, directory_t *dir, const struct inotify_event *event);
 void terminate_plugin();
 
 #endif

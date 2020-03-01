@@ -48,12 +48,12 @@ __asm__(".symver memcpy,memcpy@GLIBC_2.2.5");
 
 
 /**
- * \fn void displayHelp()
+ * \fn void filenotify_displayhelp()
  * \brief Display help page
  *
  */
 void
-displayHelp ()
+filenotify_displayhelp ()
 {
 	fprintf(stdout, "Usage : filenotify -c [config] \n");
 	fprintf(stdout, "Options :\n");
@@ -63,25 +63,21 @@ displayHelp ()
 }
 
 /**
- * \fn void displayWelcome()
+ * \fn void filenotify_displaywelcome()
  * \brief Function to say the welcome banner
  *
  */
 void
-displayWelcome ()
+filenotify_displaywelcome ()
 {
 	log_msg("INFO", " *** Welcome in filenotifier *** ");
 }
 
 /**
- * \fn void handle_events()
+ * \fn void filenotify_handleevents()
  * \brief Read all available inotify events from the file descriptor 'inotify_fd'.
- *        wd is the table of watch descriptors for the directories in argv.
- *        argc is the length of wd and argv.
- *        argv is the list of watched directories.
- *        Entry 0 of wd and argv is unused.
  */
-void handle_events()
+void filenotify_handleevents()
 {
 	/* Some systems cannot read integer variables if they are not
            properly aligned. On other systems, incorrect alignment may
@@ -116,9 +112,9 @@ void handle_events()
 		     ptr += sizeof(struct inotify_event) + event->len) {
 			event = (const struct inotify_event *) ptr;
 			log_msg("DEBUG", "event inotify from descriptor %i", event->wd);
-			struct directory *dir = NULL;
+			directory_t *dir = NULL;
 
-			struct directory *directory_lst_it = directories;
+			directory_t *directory_lst_it = directories;
 			for(directory_lst_it = directories; directory_lst_it != NULL; directory_lst_it = directory_lst_it->next) {
 				if (directory_lst_it->wd == event->wd) {
 					log_msg("DEBUG", "dirname=%s descriptor=%i = %i", directory_lst_it->name, directory_lst_it->wd, event->wd);
@@ -127,7 +123,7 @@ void handle_events()
 				}
 			}
 			if(dir != NULL) {
-				struct plugins *plugins_lst_it = plugins_lst;
+				plugin_t *plugins_lst_it = plugins_lst;
                 		for (plugins_lst_it = plugins_lst; plugins_lst_it != NULL; plugins_lst_it = plugins_lst_it->next) {
 					plugins_lst_it->func_handle(plugins_lst_it->p_name, dir, event);
 				}
@@ -136,12 +132,16 @@ void handle_events()
 	}
 }
 
-struct directory *watchInotifyDirectory()
+/**
+ * \fn directory_t *filenotify_subscribedirectory()
+ * \brief read config and start inotify to monitor each directory
+ */
+directory_t *filenotify_subscribedirectory()
 {
-	struct directory *dir=NULL;
-	struct nlist *watch_directories;
+	directory_t *dir=NULL;
+	nlist_t *watch_directories;
 	int n_watch_directories=0;
-	struct nlist *np;
+	nlist_t *np;
 
 	/* determine all directory to watch */
 	watch_directories=config_getbyprefix(config, "watch_directory.");
@@ -150,8 +150,8 @@ struct directory *watchInotifyDirectory()
 		struct dirent *dir_;
 		if (d)
 		{
-			struct directory *dir_save = dir;
-			dir = (struct directory *) malloc(sizeof(struct directory));
+			directory_t *dir_save = dir;
+			dir = (directory_t *) malloc(sizeof(directory_t));
 			dir->next=dir_save;
 			dir->wd = inotify_add_watch(inotify_fd, np->defn, IN_MOVE | IN_CLOSE | IN_DELETE );
 			dir->name = strdup(np->defn);
@@ -174,7 +174,7 @@ struct directory *watchInotifyDirectory()
 					event->name[strlen(dir_->d_name)] = '\0';
 					event->len = strlen(dir_->d_name);
 					event->mask = IN_CLOSE_WRITE;
-	                                struct plugins *plugins_lst_it = plugins_lst;
+	                                plugin_t *plugins_lst_it = plugins_lst;
 					log_msg("INFO", "Presence initiale du fichier : %s/%s (%i) (%i)", dir->name, event->name, strlen(event->name), strlen(dir->name));
         	                        for (plugins_lst_it = plugins_lst; plugins_lst_it != NULL; plugins_lst_it = plugins_lst_it->next) {
                 	                        plugins_lst_it->func_handle(plugins_lst_it->p_name, dir, event);
@@ -190,10 +190,10 @@ struct directory *watchInotifyDirectory()
 }
 
 /**
- * \fn int mainLoop()
- * \brief main loop of programme
+ * \fn int filenotify_mainloop()
+ * \brief main loop of program wait for inotify event and send it to handle
  */
-int mainLoop()
+int filenotify_mainloop()
 {
 	nfds_t nfds;
 	struct pollfd fds[2];
@@ -205,7 +205,7 @@ int mainLoop()
 		exit(EXIT_FAILURE);
 	}
 
-	directories = watchInotifyDirectory();
+	directories = filenotify_subscribedirectory();
 
 
 
@@ -229,21 +229,25 @@ int mainLoop()
 		if (poll_num > 0) {
 			if (fds[0].revents & POLLIN) {
 				/* Inotify events are available */
-				handle_events();
+				filenotify_handleevents();
 			}
 		}
 
 	}
-	free(directories);
+	// never reach
 	return EXIT_SUCCESS;
 }
 
-struct plugins *loadPlugins()
+/**
+ * \fn plugin_t *filenotify_loadplugins()
+ * \brief Load plugins, open library, call init_plugin and put in memory
+ */
+plugin_t *filenotify_loadplugins()
 {
-	struct plugins *plugins_lst_ptr = NULL;
-	struct nlist *plugins_config;
-	struct nlist *np;
-	void (*func_init)(char *p_name, struct nlist *config);
+	plugin_t *plugins_lst_ptr = NULL;
+	nlist_t *plugins_config;
+	nlist_t *np;
+	void (*func_init)(char *p_name, nlist_t *config);
 
 	/* determine all plugins to load */
 	plugins_config=config_getbyprefix(config, "plugins.");
@@ -272,8 +276,8 @@ struct plugins *loadPlugins()
 
 		// Init du plugins
 		func_init(np->name, config);
-		struct plugins *plugins_lst_save = plugins_lst_ptr;
-		plugins_lst_ptr = malloc(sizeof(struct plugins));
+		plugin_t *plugins_lst_save = plugins_lst_ptr;
+		plugins_lst_ptr = malloc(sizeof(plugin_t));
 		plugins_lst_ptr->next=plugins_lst_save;
 		plugins_lst_ptr->func_handle = dlsym(plugin, "handle_event");
 		if (!plugins_lst_ptr->func_handle) {
@@ -306,10 +310,11 @@ struct plugins *loadPlugins()
 }
 
 /**
- * \fn void sig_handler
- * \brief trap signal
+ * \fn void filenotify_sighandler(int signo)
+ * \brief trap signal and stop or reload config
+ * \param signo the number of signal
  */
-void sig_handler(int signo)
+void filenotify_sighandler(int signo)
 {
 	if (signo == SIGUSR1) {
 		log_msg("INFO", "received SIGUSR1");
@@ -331,24 +336,24 @@ void sig_handler(int signo)
 		config_displayall(config);
 
 		// Init and load new plugin list
-		plugins_lst = loadPlugins();
-		directories = watchInotifyDirectory();
+		plugins_lst = filenotify_loadplugins();
+		directories = filenotify_subscribedirectory();
 	} else if (signo == SIGUSR2) {
 		log_msg("INFO", "received SIGUSR2");
 	} else if (signo == SIGINT) {
 		log_msg("INFO", "received SIGING => exit");
-		prg_exit(EXIT_SUCCESS);
+		filenotify_exit(EXIT_SUCCESS);
 	} else if (signo == SIGTERM) {
 		log_msg("INFO", "received SIGTERM => exit");
-		prg_exit(EXIT_SUCCESS);
+		filenotify_exit(EXIT_SUCCESS);
 	}
 }
 
 /**
- * \fn void filenotify_directory_free()
- * \brief Recursive free structure
+ * \fn void filenotify_directory_free(directory_t *l)
+ * \brief Recursive free struct directory_t and stop swatch
  */
-void filenotify_directory_free(struct directory *l) {
+void filenotify_directory_free(directory_t *l) {
 	if(l->next != NULL) {
 		filenotify_directory_free(l->next);
 	}
@@ -359,10 +364,10 @@ void filenotify_directory_free(struct directory *l) {
 }
 
 /**
- * \fn void filenotify_plugins_free()
+ * \fn void filenotify_plugins_free(plugin_t *l)
  * \brief Recursive free plugins structure and close library
  */
-void filenotify_plugins_free(struct plugins *l) {
+void filenotify_plugins_free(plugin_t *l) {
 	if(l != NULL) {
 		if(l->next != NULL) {
 			filenotify_plugins_free(l->next);
@@ -377,10 +382,10 @@ void filenotify_plugins_free(struct plugins *l) {
 }
 
 /**
- * \fn prg_exit()
+ * \fn filenotify_exit(int code)
  * \brief Exit programm with cleaning mem
  */
-void prg_exit(int code) {
+void filenotify_exit(int code) {
 	filenotify_directory_free(directories);
 	filenotify_plugins_free(plugins_lst);
 	nlist_free(config);
@@ -406,7 +411,7 @@ int main(int argc, char *argv[])
 				// Store config file path
 				filenotify_config_file = optarg;
 				if(filenotify_config_file == NULL) {
-					displayHelp();
+					filenotify_displayhelp();
 					return 255;
 				}
 				break;
@@ -414,7 +419,7 @@ int main(int argc, char *argv[])
 				// Store pid file path
 				filenotify_pid_filepath = optarg;
 				if(filenotify_config_file == NULL) {
-                                        displayHelp();
+                                        filenotify_displayhelp();
                                         return 255;
                                 }
                                 break;
@@ -425,15 +430,15 @@ int main(int argc, char *argv[])
 			case '?':
 				if (optopt == 'c') {
 					fprintf (stderr, "Option -%c requires an argument.\n", optopt);
-					displayHelp();
+					filenotify_displayhelp();
 					return 255;
 				} else if (isprint (optopt)) {
 					fprintf (stderr, "Unknown option `-%c'.\n", optopt);
-					displayHelp();
+					filenotify_displayhelp();
 					return 255;
 				} else {
 					fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
-					displayHelp();
+					filenotify_displayhelp();
 					return 255;
 				}
 		}
@@ -442,26 +447,26 @@ int main(int argc, char *argv[])
 
 	if((config = config_loadfromfile(filenotify_config_file)) == 0) {
 		fprintf (stderr, "Critical error while loading config, exit\n");
-		displayHelp();
+		filenotify_displayhelp();
 		return 255;
 	}
 	config_displayall(config);
-	plugins_lst = loadPlugins();
-	displayWelcome();
+	plugins_lst = filenotify_loadplugins();
+	filenotify_displaywelcome();
 
 	/*
 	Configure to trap all signal
 	 */
-	if (signal(SIGUSR1, sig_handler) == SIG_ERR) {
+	if (signal(SIGUSR1, filenotify_sighandler) == SIG_ERR) {
 		log_msg("ERROR", "can't catch SIGUSR1");
 	}
-	if (signal(SIGUSR2, sig_handler) == SIG_ERR) {
+	if (signal(SIGUSR2, filenotify_sighandler) == SIG_ERR) {
 		log_msg("ERROR", "can't catch SIGUSR2");
 	}
-	if (signal(SIGINT, sig_handler) == SIG_ERR) {
+	if (signal(SIGINT, filenotify_sighandler) == SIG_ERR) {
 		log_msg("ERROR", "can't catch SIGINT");
 	}
-	if (signal(SIGTERM, sig_handler) == SIG_ERR) {
+	if (signal(SIGTERM, filenotify_sighandler) == SIG_ERR) {
 		log_msg("ERROR", "can't catch SIGTERM");
 	}
 
@@ -507,5 +512,5 @@ int main(int argc, char *argv[])
 	if(filenotify_daemon_mode && pid > 0) {
 		return 0;
 	}
-	return mainLoop();
+	return filenotify_mainloop();
 }

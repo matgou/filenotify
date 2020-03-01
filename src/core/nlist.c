@@ -22,15 +22,15 @@
 #include <string.h>
 
 /**
- * \fn struct nlist *nlist_dup()
+ * \fn nlist_t *nlist_dup()
  * \brief duplicate a nlist object
  * \return fist list element
  */
-struct nlist *nlist_dup(struct nlist *list)
+nlist_t *nlist_dup(nlist_t *list)
 {
 	if(list != NULL) {
 		// Duplicate list element
-		struct nlist *l = malloc(sizeof(struct nlist));
+		nlist_t *l = malloc(sizeof(nlist_t));
 		l->name = strdup(list->name);
 		l->defn = strdup(list->defn);
 		l->next = nlist_dup(list->next);	
@@ -46,9 +46,9 @@ struct nlist *nlist_dup(struct nlist *list)
  * \brief look for a string in nlist
  * \return list element
  */
-struct nlist *lookup(struct nlist *list, char *s)
+nlist_t *lookup(nlist_t *list, char *s)
 {
-	struct nlist *list_it = list;
+	nlist_t *list_it = list;
 	for(list_it = list; list_it != NULL; list_it = list_it->next) {
 		if(list_it->name == 0) {
 			continue;
@@ -66,11 +66,11 @@ struct nlist *lookup(struct nlist *list, char *s)
  * \brief install: put (name, defn) in hashtab
  * \return
  */
-struct nlist *install(struct nlist *list, char *name, char *defn)
+nlist_t *install(nlist_t *list, char *name, char *defn)
 {
-	struct nlist *np = NULL;
+	nlist_t *np = NULL;
 	if ((np = lookup(list, name)) == NULL) { /* not found */
-		np = (struct nlist *) malloc(sizeof(struct nlist));
+		np = (nlist_t *) malloc(sizeof(nlist_t));
 		np->next = list;
         if (np == NULL || (np->name = strdup(name)) == NULL) {
 			return NULL;
@@ -95,7 +95,7 @@ struct nlist *install(struct nlist *list, char *name, char *defn)
  * \fn void nlist_free()
  * \brief free a nlist object
  */
-void nlist_free(struct nlist *l) {
+void nlist_free(nlist_t *l) {
 	// recursive
 	if(l != NULL) {
 		if(l->next != NULL) {
