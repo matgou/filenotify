@@ -32,6 +32,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/wait.h> 
+#include <sys/types.h> 
 
 /**
  * \fn void init_plugin()
@@ -40,6 +42,7 @@
 void init_plugin(char *p_name, struct nlist *config_ref)
 {
         config = nlist_dup(config_ref);
+	log_msg("DEBUG", "Init plugins : plg_notify_exec(%s)", p_name);
 }
 
 /**

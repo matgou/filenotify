@@ -37,6 +37,7 @@
 void init_plugin(char *p_name, struct nlist *config_ref)
 {
 	config = nlist_dup(config_ref);
+        log_msg("DEBUG", "Init plugins : plg_notify_log(%s)", p_name);
 }
 
 /**
