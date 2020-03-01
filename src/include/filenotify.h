@@ -46,8 +46,12 @@ void displayWelcome();
 void displayHelp();
 void handle_events();
 int mainLoop();
-void free_directories(struct directory *l);
-void free_plugins(struct plugins *l);
+
+// To free directory list chain
+void filenotify_directory_free(struct directory *l);
+// To free plugin list chain
+void filenotify_plugins_free(struct plugins *l);
+
 void prg_exit(int code);
 void sig_handler(int signo);
 

@@ -312,9 +312,9 @@ void sig_handler(int signo)
 		log_msg("INFO", "received SIGUSR1");
 
 		// free old plugins
-		free_plugins(plugins_lst);
+		filenotify_plugins_free(plugins_lst);
 		// free old directories
-		free_directories(directories);
+		filenotify_directory_free(directories);
 		// free old config
 		nlist_free(config);
 
@@ -342,12 +342,12 @@ void sig_handler(int signo)
 }
 
 /**
- * \fn void free_struct()
+ * \fn void filenotify_directory_free()
  * \brief Recursive free structure
  */
-void free_directories(struct directory *l) {
+void filenotify_directory_free(struct directory *l) {
 	if(l->next != NULL) {
-		free_directories(l->next);
+		filenotify_directory_free(l->next);
 	}
 	inotify_rm_watch(inotify_fd,l->wd);
 	free(l->name);
@@ -356,13 +356,13 @@ void free_directories(struct directory *l) {
 }
 
 /**
- * \fn void free_struct()
- * \brief Recursive free structure
+ * \fn void filenotify_plugins_free()
+ * \brief Recursive free plugins structure and close library
  */
-void free_plugins(struct plugins *l) {
+void filenotify_plugins_free(struct plugins *l) {
 	if(l != NULL) {
 		if(l->next != NULL) {
-			free_plugins(l->next);
+			filenotify_plugins_free(l->next);
 		}
 		log_msg("DEBUG", "Close plugin : %s", l->plugin_name);
 		l->func_terminate();
@@ -378,8 +378,8 @@ void free_plugins(struct plugins *l) {
  * \brief Exit programm with cleaning mem
  */
 void prg_exit(int code) {
-	free_directories(directories);
-	free_plugins(plugins_lst);
+	filenotify_directory_free(directories);
+	filenotify_plugins_free(plugins_lst);
 	nlist_free(config);
 	exit(code);
 }
