@@ -24,7 +24,18 @@ With filenotify daemon, you can store file's presence status in influxdb (and ti
 
 ### Idea 2 : A sftp proxy gateway
 
-TODO : Filenotify can watch directory and bounce each receive file to an other server. This is usefull when final server is behind a firewall.
+Filenotify can watch directory and bounce each receive file to an other server. This is usefull when final server is behind a firewall.
+
+```mermaid
+graph TB
+  subgraph "Intranet"
+  FileBoucer[File Bouncer DMZ] --> BuisnessServer[Buisness Server]
+  end
+
+  subgraph "Internet"
+  RemoteFileSender -. Firewall .-> FileBoucer
+  end
+```
 
 ### Idea 3 : A clamav live scan agent
 
@@ -43,6 +54,7 @@ He can store event in influxdb database or log it in a logfile. But he can also 
 graph TB
 
   SubGraph1 --> SubGraph1Flow
+
   subgraph "InfluxDB"
   SubGraph1Flow(Http interface)
   SubGraph1Flow --> Database
@@ -55,7 +67,7 @@ graph TB
   mlog --> log[logfile]
   daemon --> mexec[Module exec]
   mexec --> bash[Bash command]
-end
+  end
 ```
 
 ## Contributing
