@@ -25,11 +25,11 @@
 
 struct nlist *config;
 
-struct nlist *loadConfig (char *configFilePath);
+struct nlist *config_loadfromfile (char *configFilePath);
 void freeconfig ();
 struct nlist *save_config(char *key, char* value);
-char *get_config(char *key);
-void display_allconfig(struct nlist *list);
-struct nlist *get_configs(struct nlist *list, char *prefix);
+char *config_getbykey(char *key);
+void config_displayall(struct nlist *list);
+struct nlist *config_getbyprefix(struct nlist *list, char *prefix);
 
 #endif

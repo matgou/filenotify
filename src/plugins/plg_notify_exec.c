@@ -74,7 +74,7 @@ void handle_event(char *p_name, struct directory *dir, const struct inotify_even
         strcpy(config_cmd, p_name);
         strcat(config_cmd, ".cmd");
         config_cmd[config_cmd_len - 1] = '\0';
-	if(get_config(config_cmd) == NULL) {
+	if(config_getbykey(config_cmd) == NULL) {
 		log_msg("ERROR","Unable to find '%s' key in config file", config_cmd);
 		return ;
 	}
@@ -106,8 +106,8 @@ void handle_event(char *p_name, struct directory *dir, const struct inotify_even
         }
 
 
-	char *cmd = malloc(sizeof(char) * (strlen(get_config(config_cmd)) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1));
-	sprintf(cmd, get_config(config_cmd), dir->name, event->name, value);
+	char *cmd = malloc(sizeof(char) * (strlen(config_getbykey(config_cmd)) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1));
+	sprintf(cmd, config_getbykey(config_cmd), dir->name, event->name, value);
 	log_msg("DEBUG", "Execute cmd: %s", cmd);
         char *args[]={"/bin/bash","-c",cmd,NULL};
 	int status;

@@ -40,7 +40,10 @@
 #include <dlfcn.h>
 #include <signal.h>
 
-// This is a hook to use older memcpy to keep compatibilty with older linux
+/**
+ * \fn __asm__(".symver memcpy,memcpy@GLIBC_2.2.5")
+ * \brief This is a hook to use older memcpy to keep compatibilty with older linux
+ */
 __asm__(".symver memcpy,memcpy@GLIBC_2.2.5");
 
 
@@ -141,7 +144,7 @@ struct directory *watchInotifyDirectory()
 	struct nlist *np;
 
 	/* determine all directory to watch */
-	watch_directories=get_configs(config, "watch_directory.");
+	watch_directories=config_getbyprefix(config, "watch_directory.");
         for(np = watch_directories; np != NULL; np = np->next) {
 		DIR *d = opendir(np->defn);
 		struct dirent *dir_;
@@ -243,11 +246,11 @@ struct plugins *loadPlugins()
 	void (*func_init)(char *p_name, struct nlist *config);
 
 	/* determine all plugins to load */
-	plugins_config=get_configs(config, "plugins.");
+	plugins_config=config_getbyprefix(config, "plugins.");
 	for(np = plugins_config; np != NULL; np = np->next) {
 		char *plugin_name = strdup(np->defn);
-		char *plugin_path = (char *) malloc( strlen(plugin_name) + strlen(get_config("plugins_dir")) + 1 );
-		strcpy(plugin_path, get_config("plugins_dir"));
+		char *plugin_path = (char *) malloc( strlen(plugin_name) + strlen(config_getbykey("plugins_dir")) + 1 );
+		strcpy(plugin_path, config_getbykey("plugins_dir"));
 		strcat(plugin_path, plugin_name);
 		log_msg("INFO", "Chargement du plugins : %s", plugin_path);
 		// Charging .so
@@ -319,13 +322,13 @@ void sig_handler(int signo)
 		nlist_free(config);
 
 		// Switch config
-		if((config = loadConfig(filenotify_config_file)) == 0) {
+		if((config = config_loadfromfile(filenotify_config_file)) == 0) {
 			fprintf (stderr, "Critical error while loading config, exit\n");
 			exit(EXIT_FAILURE);
 		}
 
 		// Display config
-		display_allconfig(config);
+		config_displayall(config);
 
 		// Init and load new plugin list
 		plugins_lst = loadPlugins();
@@ -437,12 +440,12 @@ int main(int argc, char *argv[])
 	}
 	config = NULL;
 
-	if((config = loadConfig(filenotify_config_file)) == 0) {
+	if((config = config_loadfromfile(filenotify_config_file)) == 0) {
 		fprintf (stderr, "Critical error while loading config, exit\n");
 		displayHelp();
 		return 255;
 	}
-	display_allconfig(config);
+	config_displayall(config);
 	plugins_lst = loadPlugins();
 	displayWelcome();
 

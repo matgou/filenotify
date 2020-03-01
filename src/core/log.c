@@ -18,11 +18,9 @@
 ******************************************************************************/
 /**
  * \file log.c
- * \brief Function to log
+ * \brief Function to print string in logfile
  * \author Goulin.M
- * \version 0.1
- *
- * One file by parameter
+ * \version 1.0
  */
 #include <log.h>
 #include <config.h>
@@ -34,20 +32,22 @@
 
 
 /**
- * \fn int displayLog()
- * \brief verify if loglevel is more than tag level
+ * \fn int log_isleveldisplay(char *tag)
+ * \brief Check if loglevel in config let display the TAG in parameters
+ * \param tag the loglevel to check
+ * \return 0 if no display, 1 if display
  */
 int
-displayLog(char *tag)
+log_isleveldisplay(char *tag)
 {
-	if(get_config("loglevel") == NULL) {
+	if(config_getbykey("loglevel") == NULL) {
 		printf("[NOLOG] ");
 		return 1;
 	}
-	if(strcmp("DEBUG", get_config("loglevel"))==0) {
+	if(strcmp("DEBUG", config_getbykey("loglevel"))==0) {
 		return 1;
 	}
-	if(strcmp("INFO", get_config("loglevel")) == 0) {
+	if(strcmp("INFO", config_getbykey("loglevel")) == 0) {
 		if(strcmp(tag, "DEBUG")==0) {
 			return 0;
 		} else {
@@ -61,49 +61,62 @@ displayLog(char *tag)
 }
 
 /**
- * \fn int log_msg()
- * \brief Display line on stdout and logfile
+ * \fn int log_msg(char *tag, char* msg, ...)
+ * \brief Display line on stdout and save it in logfile
+ * \param tag the level of log DEBUG, INFO, ERROR
+ * \param msg string representing the format of message (can contain %s, %i...)
+ * \param ... argument to the message
  * \return 0 in case of success
  */
 int
 log_msg(char *tag, char* msg, ...)
 {
-	if(!displayLog(tag)) {
+	// Check if log must be display
+	if(!log_isleveldisplay(tag)) {
 		return 0;
 	}
-	char *separator=" : ";
-	char *end="\n";
-
+	// Parameters : 
+	const char *separator=" : ";
+	const char *end="\n";
+	// Get curtime and put in in string
 	time_t curtime = time(0);
 	char *timeString=ctime(&curtime);
 	timeString[strlen(timeString)-1]='\0';
+
+	// Calculate the full message with concat tag, timestring, separator, message, end
 	int message_len = strlen(msg) + 1 + strlen(tag) + strlen(timeString) + strlen(separator)*2 + strlen(end);
 	char *format = (char*) malloc(message_len * sizeof(char));
-	
 	strcpy(format, timeString);
 	strcat(format, separator);
 	strcat(format, tag);
 	strcat(format, separator);
 	strcat(format, msg);
 	strcat(format, end);
+
+	// use va_list to use many args
   	va_list args;
 	va_start (args, msg);
 	
+	// print to stdout
 	vfprintf(stdout, format, args );
 	va_end (args);
-	va_start (args, msg);
 
+	// print to a logfile
+	va_start (args, msg);
 	if(logFilePointer == NULL)
 	{
-		logFilePointer=fopen(get_config("logfile"), "a+");
+		logFilePointer=fopen(config_getbykey("logfile"), "a+");
 	}
 	if(logFilePointer != NULL)
 	{
 		vfprintf(logFilePointer, format, args );
 	}
 	fflush(logFilePointer);
-	
 	va_end (args);
+
+	// free alloc format
 	free(format);
+
+	// return 0
 	return 0;
 }

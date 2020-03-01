@@ -19,13 +19,17 @@
 #ifndef nlist_h
 #define nlist_h
 
+/**
+ * \struct nlist nlist.h
+ * \brief A object to store simple key-value list
+ */
 struct nlist { /* table entry: */
     struct nlist *next; /* next entry in chain */
     char *name; /* defined name */
     char *defn; /* replacement text */
 };
 
-/* lookup: look for s in hashtab */
+/* Function list */
 struct nlist *nlist_dup(struct nlist *list);
 struct nlist *lookup(struct nlist *list, char *s);
 struct nlist *install(struct nlist *list, char *name, char *defn);

@@ -35,6 +35,7 @@
 #include <curl/curl.h>
 #include <dlfcn.h>
 
+// Define some curl variables
 
 static void *curl_handle;
 static int curl_init;
@@ -47,10 +48,11 @@ static void (*f_cleanup)(CURL *) = NULL;
 
 /**
  * \fn void terminate_plugin()
- * \brief free alloc mem
+ * \brief free alloc mem by the plugins
  */
 void terminate_plugin()
 {
+	// do not free config if it's alredy free
 	if(config != NULL) {
 	        nlist_free(config);
 		config = NULL;
@@ -58,63 +60,73 @@ void terminate_plugin()
 }
 
 /**
- * \fn void init_plugin()
- * \brief initialise un Plugins
+ * \fn void init_plugin(char *p_name, struct nlist *config_ref)
+ * \brief initialise the plugins by charging config and loading curl as dynamic library
+ * \param p_name the plugin name
+ * \param config_ref the configuration
  */
 void
 init_plugin(char *p_name, struct nlist *config_ref)
 {
-    char *error;
-    config = nlist_dup(config_ref);
-    curl_init=1;
+	// Duplicate config to keepit in memory
+	config = nlist_dup(config_ref);
+	char *error;
+	// In case of error curl_init will be set to 0
+	curl_init=1;
 
-    curl_handle = dlopen ("libcurl.so.3", RTLD_LAZY);
-    if(curl_handle == NULL) {
-        curl_handle = dlopen ("libcurl.so.4", RTLD_LAZY);
-        if(curl_handle != NULL) {
-            log_msg("DEBUG", "plg_http_post(%s) use library libcurl.so.4", p_name);
-        } else {
-            log_msg("ERROR", "plg_http_post(%s) : unable to open a libcurl.so : %s", p_name, dlerror());
+	// Try to load libcurl.so.3 or libcurl.so.4
+	curl_handle = dlopen ("libcurl.so.3", RTLD_LAZY);
+	if(curl_handle == NULL) {
+		curl_handle = dlopen ("libcurl.so.4", RTLD_LAZY);
+		if(curl_handle != NULL) {
+			log_msg("DEBUG", "plg_http_post(%s) use library libcurl.so.4", p_name);
+		} else {
+			log_msg("ERROR", "plg_http_post(%s) : unable to open a libcurl.so : %s", p_name, dlerror());
+			curl_init=0;
+		}
+	} else {
+        	log_msg("DEBUG", "plg_http_post(%s) use library libcurl.so.3", p_name);
 	}
-    } else {
-        log_msg("DEBUG", "plg_http_post(%s) use library libcurl.so.3", p_name);
-    }
 
-    if(curl_handle != NULL) {
-	    f_init = dlsym(curl_handle, "curl_easy_init");
-	    if ((error = dlerror()) != NULL)  {
-		log_msg("ERROR", "plg_http_post(%s) when load curl_easy_init : %s", error);
-		curl_init=0;
-	    }
+	// If curl is load as dynamic library link curl function into ptr
+	if(curl_handle != NULL) {
+		f_init = dlsym(curl_handle, "curl_easy_init");
+		if ((error = dlerror()) != NULL)  {
+			log_msg("ERROR", "plg_http_post(%s) when load curl_easy_init : %s", error);
+			curl_init=0;
+		}
 
-	    f_setopt = dlsym(curl_handle, "curl_easy_setopt");
-	    if ((error = dlerror()) != NULL)  {
-		log_msg("ERROR", "plg_http_post(%s) when load curl_easy_setopt : %s", error);
-		curl_init=0;
-	    }
+		f_setopt = dlsym(curl_handle, "curl_easy_setopt");
+		if ((error = dlerror()) != NULL)  {
+			log_msg("ERROR", "plg_http_post(%s) when load curl_easy_setopt : %s", error);
+			curl_init=0;
+		}
 
-	    f_perform = dlsym(curl_handle, "curl_easy_perform");
-	    if ((error = dlerror()) != NULL)  {
-		log_msg("ERROR", "plg_http_post(%s) when load curl_easy_perform : %s", error);
-		curl_init=0;
-	    }
+		f_perform = dlsym(curl_handle, "curl_easy_perform");
+		if ((error = dlerror()) != NULL)  {
+			log_msg("ERROR", "plg_http_post(%s) when load curl_easy_perform : %s", error);
+			curl_init=0;
+		}
 
-	    f_cleanup = dlsym(curl_handle, "curl_easy_cleanup");
-	    if ((error = dlerror()) != NULL)  {
-		log_msg("ERROR", "plg_http_post(%s) when load curl_easy_cleanup : %s", error);
-		curl_init=0;
-	    }
-            f_strerror = dlsym(curl_handle, "curl_easy_strerror");
-            if ((error = dlerror()) != NULL)  {
-                log_msg("ERROR", "plg_http_post(%s) when load curl_easy_cleanup : %s", error);
-                curl_init=0;
-            }
-    }
+		f_cleanup = dlsym(curl_handle, "curl_easy_cleanup");
+		if ((error = dlerror()) != NULL)  {
+			log_msg("ERROR", "plg_http_post(%s) when load curl_easy_cleanup : %s", error);
+			curl_init=0;
+		}
+		f_strerror = dlsym(curl_handle, "curl_easy_strerror");
+		if ((error = dlerror()) != NULL)  {
+			log_msg("ERROR", "plg_http_post(%s) when load curl_easy_cleanup : %s", error);
+			curl_init=0;
+		}
+	}
 }
 
 /**
- * \fn void handle_event()
- * \brief Write log from received event
+ * \fn void handle_event(char *p_name, struct directory *dir, const struct inotify_event *event)
+ * \brief Handle a event and write it by post request in api
+ * \param p_name the plugin name use to get config
+ * \param dir the directory who emit the event
+ * \param event the inotify event
  */
 void handle_event(char *p_name, struct directory *dir, const struct inotify_event *event)
 {
@@ -167,35 +179,35 @@ void handle_event(char *p_name, struct directory *dir, const struct inotify_even
 		if (event->mask & IN_DELETE) {
 			value="0";
 		}
-	        if (event->mask & IN_MOVE_SELF) {
-	                value="1";
-	        }
-	        if (event->mask & IN_MOVED_FROM) {
-	                value="0";
-	        }
-	        if (event->mask & IN_MOVED_TO) {
-	                value="1";
+		if (event->mask & IN_MOVE_SELF) {
+			value="1";
+		}
+		if (event->mask & IN_MOVED_FROM) {
+			value="0";
+		}
+		if (event->mask & IN_MOVED_TO) {
+			value="1";
 		}
 
 
 
 		if (event->len) {
-			data = malloc(sizeof(char) * (strlen(get_config(config_data)) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1));
-			sprintf(data, get_config(config_data), dir->name, event->name, value);
+			data = malloc(sizeof(char) * (strlen(config_getbykey(config_data)) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1));
+			sprintf(data, config_getbykey(config_data), dir->name, event->name, value);
 		} else {
-			data = malloc(sizeof(char) * (strlen(get_config(config_data)) + strlen(event->name) + strlen(value) + 1));
-			sprintf(data, get_config(config_data), dir->name, "", value);
+			data = malloc(sizeof(char) * (strlen(config_getbykey(config_data)) + strlen(event->name) + strlen(value) + 1));
+			sprintf(data, config_getbykey(config_data), dir->name, "", value);
 		}
 
-		log_msg("DEBUG", "POST %s, data: %s", get_config(config_url), data);
+		log_msg("DEBUG", "POST %s, data: %s", config_getbykey(config_url), data);
 
-		(*f_setopt)(curl, CURLOPT_URL, get_config(config_url));
+		(*f_setopt)(curl, CURLOPT_URL, config_getbykey(config_url));
 		/* Now specify the POST data */
 		(*f_setopt)(curl, CURLOPT_POSTFIELDS, data);
 		/* allow whatever auth the server speaks */
-		if(get_config(config_auth) != NULL) {
+		if(config_getbykey(config_auth) != NULL) {
 			(*f_setopt)(curl, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
-			(*f_setopt)(curl, CURLOPT_USERPWD, get_config(config_auth));
+			(*f_setopt)(curl, CURLOPT_USERPWD, config_getbykey(config_auth));
 		}
 		//	log_msg("INFO", "[%s] %s : %s/%s %s", type, dir->key, dir->name, event->name, isdir);
 

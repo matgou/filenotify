@@ -20,9 +20,7 @@
  * \file config.c
  * \brief Function to manipulate configuration.
  * \author Goulin.M
- * \version 0.1
- *
- * One file by parameter
+ * \version 1.0
  */
 #include <config.h>
 #include <log.h>
@@ -31,12 +29,12 @@
 #include <stdlib.h>
 
 /**
- * \fn get_config()
- * \brief return an element in config
+ * \fn char *config_getbykey(char *key)
+ * \brief return a text-string value of a config parameter by his key, if not found return NULL
+ * \param key the key to search in config
  * \return char* value from key
  */
-char *
-get_config(char *key)
+char *config_getbykey(char *key)
 {
 	struct nlist *ptr = lookup(config, key);
 	if(ptr != NULL)
@@ -47,11 +45,12 @@ get_config(char *key)
 }
 
 /**
- * \fn void loadConfig()
- * \brief display all config in memory
+ * \fn void config_displayall(struct nlist *list)
+ * \brief use log_msg to display (INFO) all key-value from a config-nlist
+ * \param list the list-config to display
  */
 void
-display_allconfig(struct nlist *list)
+config_displayall(struct nlist *list)
 {
 	struct nlist *np = list;
         for(np = list; np != NULL; np = np->next) {
@@ -60,11 +59,13 @@ display_allconfig(struct nlist *list)
 }
 
 /**
- * \fn void get_configs()
- * \brief return list of config who contains prefix
+ * \fn void config_getbyprefix(struct nlist *list, char *prefix)
+ * \brief return a new nlist(key-value) from a config, this function filter config from prefix. 
+ * \param list the initial list to filter
+ * \param prefix the prefix used to filter
  */
 struct nlist *
-get_configs(struct nlist *list, char *prefix)
+config_getbyprefix(struct nlist *list, char *prefix)
 {
 	struct nlist *configs = NULL;
 
@@ -81,44 +82,45 @@ get_configs(struct nlist *list, char *prefix)
 }
 
 /**
- * \fn int loadConfig()
- * \brief load all config file in config structure
- * \return 1 in case of success
+ * \fn struct nlist *config_loadfromfile (char *config_filepath)
+ * \brief Load all config from a file and return a nlist-config
+ * \param config_filepath a string to identify config_filepath
+ * \return the nlist with value from file
  */
-struct nlist *loadConfig (char *configFilePath)
+struct nlist *config_loadfromfile (char *config_filepath)
 {
 	struct nlist *config_ptr = NULL;
 
-	FILE *configFile = NULL;
-	configFile = fopen(configFilePath,  "r");
-	char configLine[TAILLE_MAX] = "";
+	FILE *config_file = NULL;
+	config_file = fopen(config_filepath,  "r");
+	char config_line[TAILLE_MAX] = "";
 
-	if (configFile == NULL) {
-		log_msg("ERROR", "Failed to open config file : %s", configFilePath);
+	if (config_file == NULL) {
+		log_msg("ERROR", "Failed to open config file : %s", config_filepath);
 		return NULL;
 	}
 
-	while (fgets(configLine, TAILLE_MAX, configFile) != NULL)
+	while (fgets(config_line, TAILLE_MAX, config_file) != NULL)
 	{
-		if(configLine[0]=='#')
+		if(config_line[0]=='#')
 		{
 			continue;
 		}
-		char end=configLine[strlen(configLine)-1];
+		char end=config_line[strlen(config_line)-1];
 		if(end == '\n') {
-			configLine[strlen(configLine)-1] = '\0';
+			config_line[strlen(config_line)-1] = '\0';
 		}
-		char *value = strchr(configLine, '=');
+		char *value = strchr(config_line, '=');
 		if(value != NULL)
 		{
 			value[0]='\0';
 			// on enleve le =
 			value = value+1;
-			config_ptr = install(config_ptr, configLine, value);
+			config_ptr = install(config_ptr, config_line, value);
 		}
 	}
 
-	fclose(configFile);
+	fclose(config_file);
 
 	return config_ptr;
 }

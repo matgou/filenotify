@@ -41,3 +41,6 @@ mrproper: clean
 
 check:
 	make -C test
+
+doc:
+	doxygen filenotify.doxygen
