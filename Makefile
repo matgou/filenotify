@@ -36,6 +36,7 @@ clean:
 
 mrproper: clean
 	rm -fv filenotify.tar.gz
+	rm -rvf docs/html docs/latex
 	rm -rvf package/usr package/etc
 	make -C src mrproper
 

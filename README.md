@@ -16,11 +16,19 @@ make && sudo make install
 ```
 ## Exemple of usage 
 
-### A Influx/Grafana dashboard of file status
+### Idea 1 : A Influx/Grafana dashboard of file status
 
-With the filenotify daemon, you can store file's status in influxdb and build Grafana dashboard to visualise file in directory.
+With filenotify daemon, you can store file's presence status in influxdb (and time) to build Grafana dashboard. The goal is to visualise file in directory whitout accessing to server, and keep file modification timestamp.
 
 ![influxgrafanascreenshot](https://framagit.org/matgou/filenotify/-/raw/master/docs/influx_grafana_screenshot.png?inline=false)
+
+### Idea 2 : A sftp proxy gateway
+
+TODO : Filenotify can watch directory and bounce each receive file to an other server. This is usefull when final server is behind a firewall.
+
+### Idea 3 : A clamav live scan agent
+
+TODO : Filenotify can watch directory and call clamav on each file writing. 
 
 ## General usage
 
