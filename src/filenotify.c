@@ -39,6 +39,8 @@
 #include <poll.h>
 #include <dlfcn.h>
 #include <signal.h>
+#include <sys/wait.h>
+#include <sys/types.h>
 
 /**
  * \fn __asm__(".symver memcpy,memcpy@GLIBC_2.2.5")
@@ -123,13 +125,41 @@ void filenotify_handleevents()
 				}
 			}
 			if(dir != NULL) {
-				plugin_t *plugins_lst_it = plugins_lst;
-                		for (plugins_lst_it = plugins_lst; plugins_lst_it != NULL; plugins_lst_it = plugins_lst_it->next) {
-					plugins_lst_it->func_handle(plugins_lst_it->p_name, dir, event);
-				}
+				// exec plugins
+				filenotify_execplugins(dir, event);
             		}
 		}
 	}
+}
+
+/**
+ * \fn void filenotify_execplugins(directory *dir, const struct inotify_event *event)
+ * \brief Exec plugins for an event
+ */
+void filenotify_execplugins(directory_t *dir, const struct inotify_event *event)
+{
+	int status;
+
+	plugin_t *plugins_lst_it = plugins_lst;
+	for (plugins_lst_it = plugins_lst; plugins_lst_it != NULL; plugins_lst_it = plugins_lst_it->next) {
+		log_msg("DEBUG", "Start of execution plugin (%s) in separate thread", plugins_lst_it->p_name);
+		int pid1=fork();
+		if(pid1 == 0) {
+			/* child process monitor */
+			int pid2;
+			if (pid2 = fork()) {
+				exit(EXIT_SUCCESS);
+			} else {
+				plugins_lst_it->func_handle(plugins_lst_it->p_name, dir, event);
+				exit(EXIT_SUCCESS);
+			}
+		} else {
+			/* parent process thread */
+			waitpid(pid1, &status, NULL);
+			log_msg("DEBUG", "End of execution plugin (%s) in separate thread", plugins_lst_it->p_name);
+		}
+	}
+	return;
 }
 
 /**
@@ -145,7 +175,7 @@ directory_t *filenotify_subscribedirectory()
 
 	/* determine all directory to watch */
 	watch_directories=config_getbyprefix(config, "watch_directory.");
-        for(np = watch_directories; np != NULL; np = np->next) {
+	for(np = watch_directories; np != NULL; np = np->next) {
 		DIR *d = opendir(np->defn);
 		struct dirent *dir_;
 		if (d)
@@ -174,11 +204,8 @@ directory_t *filenotify_subscribedirectory()
 					event->name[strlen(dir_->d_name)] = '\0';
 					event->len = strlen(dir_->d_name);
 					event->mask = IN_CLOSE_WRITE;
-	                                plugin_t *plugins_lst_it = plugins_lst;
 					log_msg("INFO", "Presence initiale du fichier : %s/%s (%i) (%i)", dir->name, event->name, strlen(event->name), strlen(dir->name));
-        	                        for (plugins_lst_it = plugins_lst; plugins_lst_it != NULL; plugins_lst_it = plugins_lst_it->next) {
-                	                        plugins_lst_it->func_handle(plugins_lst_it->p_name, dir, event);
-                        	        }
+					filenotify_execplugins(dir, event);
 					free(event);
 				}
 			}
@@ -281,18 +308,18 @@ plugin_t *filenotify_loadplugins()
 		plugins_lst_ptr->next=plugins_lst_save;
 		plugins_lst_ptr->func_handle = dlsym(plugin, "handle_event");
 		if (!plugins_lst_ptr->func_handle) {
-                        /* no such symbol */
-                        log_msg("ERROR", "Error: %s", dlerror());
-                        dlclose(plugin);
-                        exit(EXIT_FAILURE);
-                }
+			/* no such symbol */
+			log_msg("ERROR", "Error: %s", dlerror());
+			dlclose(plugin);
+			exit(EXIT_FAILURE);
+		}
 		plugins_lst_ptr->func_terminate = dlsym(plugin, "terminate_plugin");
 		if (!plugins_lst_ptr->func_terminate) {
-                        /* no such symbol */
-                        log_msg("ERROR", "Error: %s", dlerror());
-                        dlclose(plugin);
-                        exit(EXIT_FAILURE);
-                }
+			/* no such symbol */
+			log_msg("ERROR", "Error: %s", dlerror());
+			dlclose(plugin);
+			exit(EXIT_FAILURE);
+		}
 
 		plugins_lst_ptr->plugin = plugin;
 		plugins_lst_ptr->plugin_name = plugin_name;
@@ -419,10 +446,10 @@ int main(int argc, char *argv[])
 				// Store pid file path
 				filenotify_pid_filepath = optarg;
 				if(filenotify_config_file == NULL) {
-                                        filenotify_displayhelp();
-                                        return 255;
-                                }
-                                break;
+					filenotify_displayhelp();
+					return 255;
+				}
+				break;
 			case 'd':
 				// Fork
 				filenotify_daemon_mode=1;
@@ -455,7 +482,7 @@ int main(int argc, char *argv[])
 	filenotify_displaywelcome();
 
 	/*
-	Configure to trap all signal
+	   Configure to trap all signal
 	 */
 	if (signal(SIGUSR1, filenotify_sighandler) == SIG_ERR) {
 		log_msg("ERROR", "can't catch SIGUSR1");
@@ -471,7 +498,7 @@ int main(int argc, char *argv[])
 	}
 
 	/*
-	Manage if daemon mode is enable
+	   Manage if daemon mode is enable
 	 */
 	if(filenotify_daemon_mode) {
 		int ppid = fork();
@@ -483,12 +510,12 @@ int main(int argc, char *argv[])
 	}
 
 	/*
-	If in the parent process
+	   If in the parent process
 	 */
 	if(filenotify_pid_filepath != NULL && pid > 0) {
-	/*
-	Store pid in file
-	 */
+		/*
+		   Store pid in file
+		 */
 		log_msg("INFO", "Store pid in : %s", filenotify_pid_filepath);
 		FILE *filenotify_pid_file;
 		if((filenotify_pid_file = fopen(filenotify_pid_filepath, "w")) == NULL) {
@@ -499,15 +526,15 @@ int main(int argc, char *argv[])
 		}
 	}
 	/*
-	If in the child process
-	*/
+	   If in the child process
+	 */
 	if(pid <= 0) {
 		fclose(stdin);
 		fclose(stdout);
 		fclose(stderr);
 	}	
 	/*
-	If pid > 0, in parent process
+	   If pid > 0, in parent process
 	 */
 	if(filenotify_daemon_mode && pid > 0) {
 		return 0;
