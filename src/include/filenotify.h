@@ -18,6 +18,7 @@
 ******************************************************************************/
 #ifndef filenotify_h
 #define filenotify_h
+#include <sys/inotify.h>
 
 /**
  * \struct directory_t
@@ -44,6 +45,17 @@ typedef struct {
 	void (*func_terminate)(); /*!< ptr to the function to call when close plugin */
 } plugin_t;
 
+/**
+ * \struct plugin_arg_t
+ * \brief a object to store args to pass to plugin function handle_event
+ */
+typedef struct {
+	plugin_t *plugin;
+	directory_t *dir;
+	struct inotify_event *event;
+} plugin_arg_t;
+ 
+
 plugin_t *plugins_lst;
 directory_t *directories;
 int inotify_fd;
@@ -57,6 +69,7 @@ int filenotify_mainloop();
 plugin_t *filenotify_loadplugins();
 directory_t *filenotify_subscribedirectory();
 void filenotify_execplugins(directory_t *dir, const struct inotify_event *event);
+void *filenotify_execplugin(void *ptrc);
 
 // To free directory list chain
 void filenotify_directory_free(directory_t *l);

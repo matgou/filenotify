@@ -2,7 +2,7 @@
 # 
 CC=gcc
 CFLAGS=-W -Wall -fPIC -I./include -ggdb -std=gnu99 $(OPTARGS) 
-LFLAGS=-D_GNU_SOURCE=1 -ldl $(OPTARGS)
+LFLAGS=-D_GNU_SOURCE=1 -ldl -lpthread $(OPTARGS)
 
 EXEC=../bin/filenotify
 SRC= $(wildcard *.c)

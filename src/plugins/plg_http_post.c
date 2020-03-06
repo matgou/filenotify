@@ -38,8 +38,7 @@
 // Define some curl variables
 
 static void *curl_handle;
-static int curl_init;
-static CURL *curl;
+static int curl_init = 0;
 static CURL *(*f_init)(void) = NULL;
 static CURLcode (*f_setopt)(CURL *, CURLoption, ...) = NULL;
 static CURLcode (*f_perform)(CURL *) = NULL;
@@ -72,7 +71,6 @@ init_plugin(char *p_name, nlist_t *config_ref)
 	config = nlist_dup(config_ref);
 	char *error;
 	// In case of error curl_init will be set to 0
-	curl_init=1;
 
 	// Try to load libcurl.so.3 or libcurl.so.4
 	curl_handle = dlopen ("libcurl.so.3", RTLD_LAZY);
@@ -119,6 +117,8 @@ init_plugin(char *p_name, nlist_t *config_ref)
 			curl_init=0;
 		}
 	}
+
+	curl_init=1;
 }
 
 /**
@@ -132,6 +132,7 @@ void handle_event(char *p_name, directory_t *dir, const struct inotify_event *ev
 {
         char *extra_post_data_config = "";
 	int extra_post_data_config_len = 0;
+	CURL *curl;
 
 	if (event->mask & IN_ISDIR) {
 		return;
@@ -175,7 +176,7 @@ void handle_event(char *p_name, directory_t *dir, const struct inotify_event *ev
 	curl = (*f_init)();
 	if(curl) {
 		log_msg("DEBUG", "handle - plg_http_post");
-		char *value;
+		char *value="1";
 		char *data;
 		/* Print event type */
 		if (event->mask & IN_OPEN) {

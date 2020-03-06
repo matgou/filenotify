@@ -29,7 +29,10 @@
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
+#include <pthread.h>
 
+// For thread safe
+pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /**
  * \fn int log_isleveldisplay(char *tag)
@@ -75,6 +78,8 @@ log_msg(char *tag, char* msg, ...)
 	if(!log_isleveldisplay(tag)) {
 		return 0;
 	}
+
+	pthread_mutex_lock(&log_mutex); /* lock muttex */
 	// Parameters : 
 	const char *separator=" : ";
 	const char *end="\n";
@@ -116,6 +121,7 @@ log_msg(char *tag, char* msg, ...)
 
 	// free alloc format
 	free(format);
+	pthread_mutex_unlock(&log_mutex);
 
 	// return 0
 	return 0;

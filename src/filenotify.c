@@ -41,6 +41,7 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <pthread.h>
 
 /**
  * \fn __asm__(".symver memcpy,memcpy@GLIBC_2.2.5")
@@ -89,7 +90,7 @@ void filenotify_handleevents()
 
 	char buf[4096]
 	__attribute__ ((aligned(__alignof__(struct inotify_event))));
-	const struct inotify_event *event;
+	struct inotify_event *event;
 	ssize_t len;
 	char *ptr;
 
@@ -136,31 +137,63 @@ void filenotify_handleevents()
  * \fn void filenotify_execplugins(directory *dir, const struct inotify_event *event)
  * \brief Exec plugins for an event
  */
-void filenotify_execplugins(directory_t *dir, const struct inotify_event *event)
+void filenotify_execplugins(directory_t *dir, const struct inotify_event *event_)
 {
-	int status;
-
 	plugin_t *plugins_lst_it = plugins_lst;
+  	pthread_attr_t thread_attr;
+	
+
+	if (pthread_attr_init (&thread_attr) != 0) {
+		log_msg("ERROR", "pthread_attr_init error : %s", strerror(errno));
+		return ;
+  	}
+
+	if (pthread_attr_setdetachstate (&thread_attr, PTHREAD_CREATE_DETACHED) != 0) {
+		log_msg("ERROR", "pthread_attr_setdetachstate error : %s", strerror(errno));
+		return ;
+  	}
+	
 	for (plugins_lst_it = plugins_lst; plugins_lst_it != NULL; plugins_lst_it = plugins_lst_it->next) {
 		log_msg("DEBUG", "Start of execution plugin (%s) in separate thread", plugins_lst_it->p_name);
-		int pid1=fork();
-		if(pid1 == 0) {
-			/* child process monitor */
-			int pid2;
-			if ((pid2 = fork())) {
-				exit(EXIT_SUCCESS);
-			} else {
-				plugins_lst_it->func_handle(plugins_lst_it->p_name, dir, event);
-				exit(EXIT_SUCCESS);
-			}
-		} else {
-			/* parent process thread */
-			waitpid(pid1, &status, 0);
-			log_msg("DEBUG", "End of execution plugin (%s) in separate thread", plugins_lst_it->p_name);
-		}
+
+		// plugins_lst_it->func_handle(plugins_lst_it->p_name, dir, event);
+		pthread_t plg_thread;
+		plugin_arg_t *ptr = malloc(sizeof(plugin_arg_t));
+		ptr->plugin = plugins_lst_it;
+		ptr->dir = dir;
+		ptr->event = malloc(sizeof(struct inotify_event) + event_->len +1);
+		memcpy(ptr->event, event_, sizeof(struct inotify_event) + event_->len + 1);
+
+    		if(pthread_create(&plg_thread, &thread_attr, &filenotify_execplugin, ptr) == -1) {
+			log_msg("ERROR", "Error when create thread : %s", strerror(errno));
+    		}
+
+		log_msg("DEBUG", "End of execution plugin (%s) in separate thread", plugins_lst_it->p_name);
 	}
 	return;
 }
+
+/**
+ * \fn void *filenotify_execplugin(void *ptrc)
+ * \brief Thread start_routine() decode args and start func_handle
+ */
+void *filenotify_execplugin(void *ptrc)
+{
+	// decode ptr
+	plugin_arg_t *ptr = (plugin_arg_t *) ptrc;
+	plugin_t *p = ptr->plugin;
+	directory_t *dir = ptr->dir;
+	struct inotify_event *event = ptr->event;
+
+	// Exec plugins
+	p->func_handle(p->p_name, dir, event);
+
+	// Exit thread
+	free(event);
+	free(ptrc);
+	pthread_exit(NULL);
+}
+
 
 /**
  * \fn directory_t *filenotify_subscribedirectory()
