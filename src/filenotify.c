@@ -147,7 +147,7 @@ void filenotify_execplugins(directory_t *dir, const struct inotify_event *event)
 		if(pid1 == 0) {
 			/* child process monitor */
 			int pid2;
-			if (pid2 = fork()) {
+			if ((pid2 = fork())) {
 				exit(EXIT_SUCCESS);
 			} else {
 				plugins_lst_it->func_handle(plugins_lst_it->p_name, dir, event);
@@ -155,7 +155,7 @@ void filenotify_execplugins(directory_t *dir, const struct inotify_event *event)
 			}
 		} else {
 			/* parent process thread */
-			waitpid(pid1, &status, NULL);
+			waitpid(pid1, &status, 0);
 			log_msg("DEBUG", "End of execution plugin (%s) in separate thread", plugins_lst_it->p_name);
 		}
 	}

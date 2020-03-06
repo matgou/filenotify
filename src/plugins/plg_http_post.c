@@ -130,6 +130,8 @@ init_plugin(char *p_name, nlist_t *config_ref)
  */
 void handle_event(char *p_name, directory_t *dir, const struct inotify_event *event)
 {
+        char *extra_post_data_config = "";
+	int extra_post_data_config_len = 0;
 
 	if (event->mask & IN_ISDIR) {
 		return;
@@ -159,6 +161,15 @@ void handle_event(char *p_name, directory_t *dir, const struct inotify_event *ev
 	strcpy(config_data, p_name);
 	strcat(config_data, ".data");
 	config_data[config_data_len - 1] = '\0';
+
+	/* Concat dir->key and .extra_post_data to build extra_post_data */
+	int extra_post_data_len = strlen("watch_directory.") + strlen(".extra_post_data") + strlen(dir->key) + 1;
+	char *extra_post_data = malloc(sizeof(char) * extra_post_data_len);
+	strcpy(extra_post_data, "watch_directory.");
+	strcat(extra_post_data, dir->key);
+	strcat(extra_post_data, ".extra_post_data");
+	extra_post_data[extra_post_data_len - 1] = '\0';
+	log_msg("DEBUG", "extra_post_data=%s", extra_post_data);
 
 	/* get a curl handle */
 	curl = (*f_init)();
@@ -190,13 +201,20 @@ void handle_event(char *p_name, directory_t *dir, const struct inotify_event *ev
 		}
 
 
+		if(config_getbykey(extra_post_data)) {
+			extra_post_data_config = config_getbykey(extra_post_data);
+			extra_post_data_config_len = strlen(extra_post_data_config);
+		} else {
+			extra_post_data_config = "";
+			extra_post_data_config_len = 0;
+		}
 
 		if (event->len) {
-			data = malloc(sizeof(char) * (strlen(config_getbykey(config_data)) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1));
-			sprintf(data, config_getbykey(config_data), dir->name, event->name, value);
+			data = malloc(sizeof(char) * (extra_post_data_config_len + strlen(config_getbykey(config_data)) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1));
+			sprintf(data, config_getbykey(config_data), dir->name, event->name, extra_post_data_config, value);
 		} else {
-			data = malloc(sizeof(char) * (strlen(config_getbykey(config_data)) + strlen(event->name) + strlen(value) + 1));
-			sprintf(data, config_getbykey(config_data), dir->name, "", value);
+			data = malloc(sizeof(char) * (extra_post_data_config_len + strlen(config_getbykey(config_data)) + strlen(event->name) + strlen(value) + 1));
+			sprintf(data, config_getbykey(config_data), dir->name, "", extra_post_data_config, value);
 		}
 
 		log_msg("DEBUG", "POST %s, data: %s", config_getbykey(config_url), data);
@@ -218,6 +236,7 @@ void handle_event(char *p_name, directory_t *dir, const struct inotify_event *ev
 			log_msg("ERROR", "curl_easy_perform() failed: %s", (*f_strerror)(res));
 		}
 		/* always cleanup */
+		free(extra_post_data);
 		free(config_url);
 		free(config_data);
 		free(config_auth);
