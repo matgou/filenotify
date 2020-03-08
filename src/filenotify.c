@@ -27,13 +27,13 @@
 #include <dirent.h>
 #include <sys/inotify.h>
 #include <stdio.h>
-#include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <sys/inotify.h>
 #include <errno.h>
 #include <filenotify.h>
+#include <string.h>
 #include <config.h>
 #include <log.h>
 #include <poll.h>
@@ -56,13 +56,6 @@ pthread_cond_t nb_thread_actif_cond;
 unsigned int nb_max_thread;
 /* Thread array (max 32 threads TODO) */
 pthread_t threads[32];
-
-/**
- * \fn __asm__(".symver memcpy,memcpy@GLIBC_2.2.5")
- * \brief This is a hook to use older memcpy to keep compatibilty with older linux
- */
-__asm__(".symver memcpy,memcpy@GLIBC_2.2.5");
-
 
 /**
  * \fn void filenotify_displayhelp()
