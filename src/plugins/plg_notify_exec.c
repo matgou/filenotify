@@ -33,8 +33,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-extern char **environ;
-
 /**
  * \fn void init_plugin()
  * \brief Initialise the plugin 
@@ -71,9 +69,8 @@ void handle_event(char *p_name, directory_t *dir, char *filename, uint32_t mask)
         /* Concat p_name and .cmd to build a config_cmd */
         int config_cmd_len = strlen(".cmd") + strlen(p_name) + 1;
         char *config_cmd = malloc(sizeof(char) * config_cmd_len);
-        strcpy(config_cmd, p_name);
-        strcat(config_cmd, ".cmd");
-        config_cmd[config_cmd_len - 1] = '\0';
+	sprintf(config_cmd, "%s.cmd", p_name);
+
 	if(config_getbykey(config_cmd) == NULL) {
 		log_msg("ERROR","Unable to find '%s' key in config file", config_cmd);
 		return ;

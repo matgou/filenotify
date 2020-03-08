@@ -92,13 +92,7 @@ log_msg(char *tag, char* msg, ...)
 	// Calculate the full message with concat tag, timestring, separator, message, end
 	int message_len = strlen(msg) + 2 + strlen(tag) + strlen(timeString) + strlen(separator)*2 ;
 	char *format = (char *) malloc(message_len * sizeof(char));
-	strcpy(format, timeString);
-	strcat(format, separator);
-	strcat(format, tag);
-	strcat(format, separator);
-	strcat(format, msg);
-	format[message_len - 2] = '\n';
-	format[message_len - 1] = '\0';
+	sprintf(format, "%s%s%s%s%s\n", timeString, separator, tag, separator, msg);
 
 	// use va_list to use many args
   	va_list args;

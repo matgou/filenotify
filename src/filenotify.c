@@ -127,7 +127,7 @@ void filenotify_handleevents()
 		/* Loop over all events in the buffer */
 		for (ptr = buf; ptr < buf + len;
 		     ptr += sizeof(struct inotify_event) + event->len) {
-			event = (const struct inotify_event *) ptr;
+			event = (struct inotify_event *) ptr;
 			log_msg("DEBUG", "event inotify from descriptor %i", event->wd);
 			directory_t *dir = NULL;
 
@@ -173,9 +173,9 @@ void filenotify_execplugins(directory_t *dir, const struct inotify_event *event_
 		plugin_arg_t *ptr = malloc(sizeof(plugin_arg_t));
 		ptr->plugin = plugins_lst_it;
 		ptr->dir = dir;
-		ptr->event_filename = malloc(sizeof(char) * strlen(event_->name));
+		ptr->event_filename = malloc(sizeof(char) * (strlen(event_->name) + 1));
 		strcpy(ptr->event_filename, event_->name);
-		ptr->event_filename[strlen(event_->name) - 1] = '\0';
+		ptr->event_filename[strlen(event_->name)] = '\0';
 		ptr->event_mask = event_->mask;
 
 		int thread_n = increase_thread_actif();
@@ -370,9 +370,7 @@ plugin_t *filenotify_loadplugins()
 		char *plugin_name = strdup(np->defn);
 		int plugin_path_len = strlen(plugin_name) + strlen(config_getbykey("plugins_dir")) + 1;
 		char *plugin_path = (char *) malloc( plugin_path_len * sizeof(char));
-		strcpy(plugin_path, config_getbykey("plugins_dir"));
-		strcat(plugin_path, plugin_name);
-		plugin_path[plugin_path_len - 1] = '\0';
+		sprintf(plugin_path, "%s%s", config_getbykey("plugins_dir"), plugin_name);
 
 		log_msg("INFO", "Chargement du plugins : %s", plugin_path);
 		// Charging .so
