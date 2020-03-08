@@ -86,7 +86,10 @@ log_msg(char *tag, char* msg, ...)
 	const char *separator=" : ";
 	// Get curtime and put in in string
 	time_t curtime = time(0);
-	char *timeString=ctime(&curtime);
+	char *timeString = malloc(sizeof(char) * strlen(ctime(&curtime)) + 1 );
+	sprintf(timeString, "%s", ctime(&curtime));
+	
+	// remove ending \n
 	timeString[strlen(timeString)-1]='\0';
 
 	// Calculate the full message with concat tag, timestring, separator, message, end
@@ -117,6 +120,7 @@ log_msg(char *tag, char* msg, ...)
 
 	// free alloc format
 	free(format);
+	free(timeString);
 	// unlock mutex
 	pthread_mutex_unlock(&log_mutex);
 
