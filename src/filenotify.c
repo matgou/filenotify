@@ -44,6 +44,20 @@
 #include <pthread.h>
 
 /**
+ * Vars to store nb_thread_actif
+ */
+unsigned int nb_thread_actif = 1;
+/* lock update of nb_thread_actif */
+pthread_mutex_t nb_thread_actif_mutex;
+pthread_mutex_t nb_thread_actif_mod_mutex;
+/* check if nb_thread_actif < max_thread */
+pthread_cond_t nb_thread_actif_cond;
+/* nb_max_thread form config with a default value */
+unsigned int nb_max_thread;
+/* Thread array (max 32 threads TODO) */
+pthread_t threads[32];
+
+/**
  * \fn __asm__(".symver memcpy,memcpy@GLIBC_2.2.5")
  * \brief This is a hook to use older memcpy to keep compatibilty with older linux
  */
@@ -125,7 +139,10 @@ void filenotify_handleevents()
 					break;
 				}
 			}
-			if(dir != NULL) {
+			if(event->len) {
+				log_msg("ERROR", "filename=%s", event->name);
+			}
+			if(dir != NULL && event->len > 0) {
 				// exec plugins
 				filenotify_execplugins(dir, event);
             		}
@@ -141,7 +158,6 @@ void filenotify_execplugins(directory_t *dir, const struct inotify_event *event_
 {
 	plugin_t *plugins_lst_it = plugins_lst;
   	pthread_attr_t thread_attr;
-	
 
 	if (pthread_attr_init (&thread_attr) != 0) {
 		log_msg("ERROR", "pthread_attr_init error : %s", strerror(errno));
@@ -154,22 +170,24 @@ void filenotify_execplugins(directory_t *dir, const struct inotify_event *event_
   	}
 	
 	for (plugins_lst_it = plugins_lst; plugins_lst_it != NULL; plugins_lst_it = plugins_lst_it->next) {
-		log_msg("DEBUG", "Start of execution plugin (%s) in separate thread", plugins_lst_it->p_name);
+		log_msg("DEBUG", "Start of execution plugin (%s) in separate thread (nbthread = %i/%i)", plugins_lst_it->p_name, nb_thread_actif,nb_max_thread);
 
 		// plugins_lst_it->func_handle(plugins_lst_it->p_name, dir, event);
-		pthread_t plg_thread;
 		plugin_arg_t *ptr = malloc(sizeof(plugin_arg_t));
 		ptr->plugin = plugins_lst_it;
 		ptr->dir = dir;
 		ptr->event = malloc(sizeof(struct inotify_event) + event_->len +1);
 		memcpy(ptr->event, event_, sizeof(struct inotify_event) + event_->len + 1);
 
-    		if(pthread_create(&plg_thread, &thread_attr, &filenotify_execplugin, ptr) == -1) {
-			log_msg("ERROR", "Error when create thread : %s", strerror(errno));
+		int thread_n = increase_thread_actif();
+		ptr->pthread_n = thread_n;
+    		if(pthread_create(&threads[thread_n], &thread_attr, &filenotify_execplugin, ptr) == -1) {
+			printf("ERROR : Error when create thread : %s", strerror(errno));
     		}
 
-		log_msg("DEBUG", "End of execution plugin (%s) in separate thread", plugins_lst_it->p_name);
 	}
+
+	pthread_attr_destroy(&thread_attr);
 	return;
 }
 
@@ -191,7 +209,43 @@ void *filenotify_execplugin(void *ptrc)
 	// Exit thread
 	free(event);
 	free(ptrc);
+
+	decrease_thread_actif();
+	log_msg("DEBUG", "End of execution plugin (%s) in separate thread (nbthread = %i/%i)", p->p_name, nb_thread_actif, nb_max_thread);
 	pthread_exit(NULL);
+}
+
+
+int increase_thread_actif()
+{
+	/* check if nb_thread_actif < nb_max_thread */
+	if(nb_thread_actif >= nb_max_thread) {
+		pthread_mutex_lock(&nb_thread_actif_mutex); /* On verrouille le mutex */
+		pthread_cond_wait(&nb_thread_actif_cond, &nb_thread_actif_mutex);
+		pthread_mutex_unlock(&nb_thread_actif_mutex); /* On verrouille le mutex */
+	}
+
+	pthread_mutex_lock(&nb_thread_actif_mod_mutex);
+	nb_thread_actif = nb_thread_actif + 1;
+	pthread_mutex_unlock(&nb_thread_actif_mod_mutex);
+
+	return nb_thread_actif - 1;
+}
+
+void decrease_thread_actif()
+{
+	pthread_mutex_lock(&nb_thread_actif_mod_mutex);
+	nb_thread_actif = nb_thread_actif - 1;
+
+	/* liberate one thread */
+	if(nb_thread_actif < nb_max_thread) {
+		pthread_mutex_lock(&nb_thread_actif_mutex); /* On verrouille le mutex */
+		pthread_cond_signal (&nb_thread_actif_cond);
+		pthread_mutex_unlock(&nb_thread_actif_mutex); /* On verrouille le mutex */
+	}
+
+	pthread_mutex_unlock(&nb_thread_actif_mod_mutex);
+	return ;
 }
 
 
@@ -209,6 +263,9 @@ directory_t *filenotify_subscribedirectory()
 	/* determine all directory to watch */
 	watch_directories=config_getbyprefix(config, "watch_directory.");
 	for(np = watch_directories; np != NULL; np = np->next) {
+		if(np->defn == NULL) {
+			continue;
+		}
 		DIR *d = opendir(np->defn);
 		struct dirent *dir_;
 		if (d)
@@ -318,7 +375,7 @@ plugin_t *filenotify_loadplugins()
 		strcat(plugin_path, plugin_name);
 		log_msg("INFO", "Chargement du plugins : %s", plugin_path);
 		// Charging .so
-		void *plugin = dlopen(plugin_path, RTLD_LAZY);
+		void *plugin = dlopen(plugin_path, RTLD_LAZY | RTLD_DEEPBIND);
 		if (!plugin)
 		{
 			log_msg("ERROR", "Cannot load %s: %s", plugin_name, dlerror ());
@@ -459,6 +516,12 @@ void filenotify_exit(int code) {
 int main(int argc, char *argv[])
 {
 	int c;
+
+	pthread_mutex_init(&log_mutex, NULL);
+	pthread_mutex_init(&nb_thread_actif_mutex, NULL);
+	pthread_mutex_init(&nb_thread_actif_mod_mutex, NULL);
+	pthread_cond_init(&nb_thread_actif_cond, NULL);
+
 	// by default no fork
 	int filenotify_daemon_mode=0;
 	// The pid of daemon
@@ -542,6 +605,18 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	/* 
+	  Convert config max_thread to int
+	*/
+	char *max_thread_string = config_getbykey("max_thread");
+	if(max_thread_string != NULL)
+	{
+		log_msg("INFO", "max_thread=%s", max_thread_string);
+		nb_max_thread = atoi(max_thread_string);
+	} else {
+		nb_max_thread = 16;
+	}
+
 	/*
 	   If in the parent process
 	 */
@@ -572,5 +647,7 @@ int main(int argc, char *argv[])
 	if(filenotify_daemon_mode && pid > 0) {
 		return 0;
 	}
+
+
 	return filenotify_mainloop();
 }

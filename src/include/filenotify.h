@@ -52,6 +52,7 @@ typedef struct {
 typedef struct {
 	plugin_t *plugin;
 	directory_t *dir;
+	int pthread_n;
 	struct inotify_event *event;
 } plugin_arg_t;
  
@@ -75,9 +76,11 @@ void *filenotify_execplugin(void *ptrc);
 void filenotify_directory_free(directory_t *l);
 // To free plugin list chain
 void filenotify_plugins_free(plugin_t *l);
-
 void filenotify_exit(int code);
 void filenotify_sighandler(int signo);
+int increase_thread_actif();
+void decrease_thread_actif();
+
 
 // Ptr to store string of config file path
 char *filenotify_config_file;

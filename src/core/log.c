@@ -79,7 +79,9 @@ log_msg(char *tag, char* msg, ...)
 		return 0;
 	}
 
-	pthread_mutex_lock(&log_mutex); /* lock muttex */
+	/* lock mutex */
+	pthread_mutex_lock(&log_mutex);
+
 	// Parameters : 
 	const char *separator=" : ";
 	const char *end="\n";
@@ -89,7 +91,7 @@ log_msg(char *tag, char* msg, ...)
 	timeString[strlen(timeString)-1]='\0';
 
 	// Calculate the full message with concat tag, timestring, separator, message, end
-	int message_len = strlen(msg) + 1 + strlen(tag) + strlen(timeString) + strlen(separator)*2 + strlen(end);
+	int message_len = strlen(msg) + 10 + strlen(tag) + strlen(timeString) + strlen(separator)*2 + strlen(end);
 	char *format = (char*) malloc(message_len * sizeof(char));
 	strcpy(format, timeString);
 	strcat(format, separator);
@@ -121,6 +123,7 @@ log_msg(char *tag, char* msg, ...)
 
 	// free alloc format
 	free(format);
+	// unlock mutex
 	pthread_mutex_unlock(&log_mutex);
 
 	// return 0

@@ -19,8 +19,10 @@
 #ifndef log_h
 #define log_h
 #include <stdio.h>
+#include <pthread.h>
 
 FILE *logFilePointer;
+pthread_mutex_t log_mutex;
 int log_msg (char *tag, char *msg, ...);
 
 #endif

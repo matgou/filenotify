@@ -32,8 +32,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/wait.h> 
-#include <sys/types.h> 
+
+extern char **environ;
 
 /**
  * \fn void init_plugin()
@@ -105,27 +105,13 @@ void handle_event(char *p_name, directory_t *dir, const struct inotify_event *ev
                 value="1";
         }
 
-
 	char *cmd = malloc(sizeof(char) * (strlen(config_getbykey(config_cmd)) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1));
 	sprintf(cmd, config_getbykey(config_cmd), dir->name, event->name, value);
 	log_msg("DEBUG", "Execute cmd: %s", cmd);
-        char *args[]={"/bin/bash","-c",cmd,NULL};
-	int status;
-	pid_t pid = fork();
-	if (pid == -1){
-		log_msg("ERROR", "can't fork, error occured");
-		exit(EXIT_FAILURE);
-	} else if (pid == 0){
-		// child process
-		int execpid=execvp(args[0],args);
-	        if(execpid < 0)
-		{
-			log_msg("ERROR", "plg_notify_exec.c: Le retour de exevp est KO");
-		}
-		exit(EXIT_SUCCESS);
-	}
-	while (wait(&status) != pid)       /* wait for completion  */
-               ;
+
+	int status=-99;
+	status = system(cmd);
+
 	log_msg("DEBUG", "Cmd return status = %i", status);
 	free(config_cmd);
 	free(cmd);
