@@ -174,8 +174,7 @@ void filenotify_execplugins(directory_t *dir, const struct inotify_event *event_
 		ptr->plugin = plugins_lst_it;
 		ptr->dir = dir;
 		ptr->event_filename = malloc(sizeof(char) * (strlen(event_->name) + 1));
-		strcpy(ptr->event_filename, event_->name);
-		ptr->event_filename[strlen(event_->name)] = '\0';
+		sprintf(ptr->event_filename, "%s", event_->name);
 		ptr->event_mask = event_->mask;
 
 		int thread_n = increase_thread_actif();
@@ -287,9 +286,8 @@ directory_t *filenotify_subscribedirectory()
 			while ((dir_ = readdir(d)) != NULL)
 			{
 				if(dir_->d_type != DT_DIR) {
-					struct inotify_event *event = malloc(sizeof(struct inotify_event) + (sizeof(char) * (strlen(dir_->d_name) + 1)));
-					memcpy(event->name, dir_->d_name, strlen(dir_->d_name));
-					event->name[strlen(dir_->d_name)] = '\0';
+					struct inotify_event *event = malloc(sizeof(struct inotify_event) + (sizeof(char) * (strlen(dir_->d_name) + 10)));
+					sprintf(event->name, "%s", dir_->d_name);
 					event->len = strlen(dir_->d_name);
 					event->mask = IN_CLOSE_WRITE;
 					log_msg("INFO", "Presence initiale du fichier : %s/%s (%i) (%i)", dir->name, event->name, strlen(event->name), strlen(dir->name));
