@@ -187,7 +187,7 @@ void filenotify_execplugins(directory_t *dir, const struct inotify_event *event_
 
 	}
 
-	pthread_attr_destroy(&thread_attr);
+	//pthread_attr_destroy(&thread_attr);
 	return;
 }
 
@@ -370,9 +370,12 @@ plugin_t *filenotify_loadplugins()
 	plugins_config=config_getbyprefix(config, "plugins.");
 	for(np = plugins_config; np != NULL; np = np->next) {
 		char *plugin_name = strdup(np->defn);
-		char *plugin_path = (char *) malloc( strlen(plugin_name) + strlen(config_getbykey("plugins_dir")) + 1 );
+		int plugin_path_len = strlen(plugin_name) + strlen(config_getbykey("plugins_dir")) + 1;
+		char *plugin_path = (char *) malloc( plugin_path_len * sizeof(char));
 		strcpy(plugin_path, config_getbykey("plugins_dir"));
 		strcat(plugin_path, plugin_name);
+		plugin_path[plugin_path_len - 1] = '\0';
+
 		log_msg("INFO", "Chargement du plugins : %s", plugin_path);
 		// Charging .so
 		void *plugin = dlopen(plugin_path, RTLD_LAZY | RTLD_DEEPBIND);
@@ -471,6 +474,9 @@ void filenotify_sighandler(int signo)
  * \brief Recursive free struct directory_t and stop swatch
  */
 void filenotify_directory_free(directory_t *l) {
+	if(l == NULL) {
+		return ;
+	}
 	if(l->next != NULL) {
 		filenotify_directory_free(l->next);
 	}
