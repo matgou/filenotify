@@ -8,6 +8,8 @@ PIDFile=/var/run/filenotify.pid
 ExecStart=/usr/bin/filenotify -c /etc/filenotify/filenotify.config -i /var/run/filenotify.pid -d
 ExecReload=kill -10 $( /var/run/filenotify.pid )
 ExecStop=kill $( cat /var/run/filenotify.pid )
+Restart=on-failure
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
