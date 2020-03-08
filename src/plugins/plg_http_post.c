@@ -145,31 +145,22 @@ void handle_event(char *p_name, directory_t *dir, char *filename, uint32_t mask)
 	/* Concat p_name and .url to build a config_url */
 	int config_url_len = strlen(".url") + strlen(p_name) + 1;
 	char *config_url = malloc(sizeof(char) * config_url_len);
-	strcpy(config_url, p_name);
-	strcat(config_url, ".url");
-	config_url[config_url_len - 1] = '\0';
+	sprintf(config_url, "%s.url", p_name);
 
 	/* Concat p_name and .auth to build a config_auth */
 	int config_auth_len = strlen(".auth") + strlen(p_name) + 1;
 	char *config_auth = malloc(sizeof(char) * config_auth_len);
-	strcpy(config_auth, p_name);
-	strcat(config_auth, ".auth");
-	config_auth[config_auth_len - 1] = '\0';
+	sprintf(config_auth, "%s.auth", p_name);
 
 	/* Concat p_name and .data to build a config_data */
 	int config_data_len = strlen(".data") + strlen(p_name) + 1;
 	char *config_data = malloc(sizeof(char) * config_data_len);
-	strcpy(config_data, p_name);
-	strcat(config_data, ".data");
-	config_data[config_data_len - 1] = '\0';
+	sprintf(config_data, "%s.data", p_name);
 
 	/* Concat dir->key and .extra_post_data to build extra_post_data */
 	int extra_post_data_len = strlen("watch_directory.") + strlen(".extra_post_data") + strlen(dir->key) + 1;
 	char *extra_post_data = malloc(sizeof(char) * extra_post_data_len);
-	strcpy(extra_post_data, "watch_directory.");
-	strcat(extra_post_data, dir->key);
-	strcat(extra_post_data, ".extra_post_data");
-	extra_post_data[extra_post_data_len - 1] = '\0';
+	sprintf(extra_post_data, "watch_directory.%s.extra_post_data", dir->key);
 	log_msg("DEBUG", "extra_post_data=%s", extra_post_data);
 
 	/* get a curl handle */
@@ -200,7 +191,6 @@ void handle_event(char *p_name, directory_t *dir, char *filename, uint32_t mask)
 		if (mask & IN_MOVED_TO) {
 			value="1";
 		}
-
 
 		if(config_getbykey(extra_post_data)) {
 			extra_post_data_config = config_getbykey(extra_post_data);

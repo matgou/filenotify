@@ -58,12 +58,7 @@ void terminate_plugin()
  */
 void handle_event(char *p_name, directory_t *dir, char *filename, uint32_t mask)
 {
-        if (mask & IN_ISDIR) {
-                return;
-        }
-
-	char *type;
-	char *isdir;
+	char *type="";
 	/* Print event type */
 	if (mask & IN_OPEN) {
 		type="IN_OPEN";
@@ -88,10 +83,5 @@ void handle_event(char *p_name, directory_t *dir, char *filename, uint32_t mask)
 	}
 
 	/* Print type of filesystem object */
-	if (mask & IN_ISDIR) {
-		isdir=" [directory]";
-	} else {
-		isdir=" [file]";
-	}
-	log_msg("INFO", "[%s][%s] %s : %s/%s %s", p_name, type, dir->key, dir->name, filename, isdir);
+	log_msg("INFO", "[%s][%s] %s : %s/%s", p_name, type, dir->key, dir->name, filename);
 }
