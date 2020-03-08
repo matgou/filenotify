@@ -84,21 +84,21 @@ log_msg(char *tag, char* msg, ...)
 
 	// Parameters : 
 	const char *separator=" : ";
-	const char *end="\n";
 	// Get curtime and put in in string
 	time_t curtime = time(0);
 	char *timeString=ctime(&curtime);
 	timeString[strlen(timeString)-1]='\0';
 
 	// Calculate the full message with concat tag, timestring, separator, message, end
-	int message_len = strlen(msg) + 10 + strlen(tag) + strlen(timeString) + strlen(separator)*2 + strlen(end);
-	char *format = (char*) malloc(message_len * sizeof(char));
+	int message_len = strlen(msg) + 2 + strlen(tag) + strlen(timeString) + strlen(separator)*2 ;
+	char *format = (char *) malloc(message_len * sizeof(char));
 	strcpy(format, timeString);
 	strcat(format, separator);
 	strcat(format, tag);
 	strcat(format, separator);
 	strcat(format, msg);
-	strcat(format, end);
+	format[message_len - 2] = '\n';
+	format[message_len - 1] = '\0';
 
 	// use va_list to use many args
   	va_list args;
