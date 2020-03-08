@@ -105,7 +105,8 @@ void handle_event(char *p_name, directory_t *dir, const struct inotify_event *ev
                 value="1";
         }
 
-	char *cmd = malloc(sizeof(char) * (strlen(config_getbykey(config_cmd)) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1));
+	unsigned int cmd_size = strlen(config_getbykey(config_cmd)) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1 - 2*3;
+	char *cmd = malloc(sizeof(char) * cmd_size);
 	sprintf(cmd, config_getbykey(config_cmd), dir->name, event->name, value);
 	log_msg("DEBUG", "Execute cmd: %s", cmd);
 
