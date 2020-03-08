@@ -122,19 +122,19 @@ init_plugin(char *p_name, nlist_t *config_ref)
 }
 
 /**
- * \fn void handle_event(char *p_name, directory_t *dir, const struct inotify_event *event)
+ * \fn void handle_event(char *p_name, directory_t *dir, char *filename, uint32_t mask)
  * \brief Handle a event and write it by post request in api
  * \param p_name the plugin name use to get config
  * \param dir the directory who emit the event
  * \param event the inotify event
  */
-void handle_event(char *p_name, directory_t *dir, const struct inotify_event *event)
+void handle_event(char *p_name, directory_t *dir, char *filename, uint32_t mask)
 {
         char *extra_post_data_config = "";
 	int extra_post_data_config_len = 0;
 	CURL *curl;
 
-	if (event->mask & IN_ISDIR) {
+	if (mask & IN_ISDIR) {
 		return;
 	}
 	if (curl_init==0) {
@@ -179,25 +179,25 @@ void handle_event(char *p_name, directory_t *dir, const struct inotify_event *ev
 		char *value="1";
 		char *data;
 		/* Print event type */
-		if (event->mask & IN_OPEN) {
+		if (mask & IN_OPEN) {
 			value="1";
 		}
-		if (event->mask & IN_CLOSE_NOWRITE) {
+		if (mask & IN_CLOSE_NOWRITE) {
 			value="1";
 		}
-		if (event->mask & IN_CLOSE_WRITE) {
+		if (mask & IN_CLOSE_WRITE) {
 			value="1";
 		}
-		if (event->mask & IN_DELETE) {
+		if (mask & IN_DELETE) {
 			value="0";
 		}
-		if (event->mask & IN_MOVE_SELF) {
+		if (mask & IN_MOVE_SELF) {
 			value="1";
 		}
-		if (event->mask & IN_MOVED_FROM) {
+		if (mask & IN_MOVED_FROM) {
 			value="0";
 		}
-		if (event->mask & IN_MOVED_TO) {
+		if (mask & IN_MOVED_TO) {
 			value="1";
 		}
 
@@ -210,13 +210,8 @@ void handle_event(char *p_name, directory_t *dir, const struct inotify_event *ev
 			extra_post_data_config_len = 0;
 		}
 
-		if (event->len) {
-			data = malloc(sizeof(char) * (extra_post_data_config_len + strlen(config_getbykey(config_data)) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1));
-			sprintf(data, config_getbykey(config_data), dir->name, event->name, extra_post_data_config, value);
-		} else {
-			data = malloc(sizeof(char) * (extra_post_data_config_len + strlen(config_getbykey(config_data)) + strlen(event->name) + strlen(value) + 1));
-			sprintf(data, config_getbykey(config_data), dir->name, "", extra_post_data_config, value);
-		}
+		data = malloc(sizeof(char) * (extra_post_data_config_len + strlen(config_getbykey(config_data)) + strlen(dir->name) + strlen(filename) + strlen(value) + 1));
+		sprintf(data, config_getbykey(config_data), dir->name, filename, extra_post_data_config, value);
 
 		log_msg("DEBUG", "POST %s, data: %s", config_getbykey(config_url), data);
 

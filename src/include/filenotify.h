@@ -18,7 +18,6 @@
 ******************************************************************************/
 #ifndef filenotify_h
 #define filenotify_h
-#include <sys/inotify.h>
 
 /**
  * \struct directory_t
@@ -41,7 +40,7 @@ typedef struct {
 	void *plugin; /*!< ptr to the plugin object after dlopen */
 	char *plugin_name; /*!< the plugin file name (so file) */
         char *p_name; /*!< the plugin name from configfile */
-	void (*func_handle)(char *p_name, directory_t *dir, const struct inotify_event *event); /*!< ptr to the function to call after inotify event */
+	void (*func_handle)(char *p_name, directory_t *dir, char *filename, uint32_t mask); /*!< ptr to the function to call after inotify event */
 	void (*func_terminate)(); /*!< ptr to the function to call when close plugin */
 } plugin_t;
 
@@ -53,7 +52,8 @@ typedef struct {
 	plugin_t *plugin;
 	directory_t *dir;
 	int pthread_n;
-	struct inotify_event *event;
+	char *event_filename;
+	unsigned int event_mask;
 } plugin_arg_t;
  
 

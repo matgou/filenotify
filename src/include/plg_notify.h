@@ -23,7 +23,7 @@
 
 // Function list
 void init_plugin(char *p_name, nlist_t *config_ref);
-void handle_event(char *p_name, directory_t *dir, const struct inotify_event *event);
+void handle_event(char *p_name, directory_t *dir, char *filename, uint32_t mask);
 void terminate_plugin();
 
 #endif

@@ -56,46 +56,42 @@ void terminate_plugin()
  * \fn void handle_event()
  * \brief Write log from received event
  */
-void handle_event(char *p_name, directory_t *dir, const struct inotify_event *event)
+void handle_event(char *p_name, directory_t *dir, char *filename, uint32_t mask)
 {
-        if (event->mask & IN_ISDIR) {
+        if (mask & IN_ISDIR) {
                 return;
         }
 
 	char *type;
 	char *isdir;
 	/* Print event type */
-	if (event->mask & IN_OPEN) {
+	if (mask & IN_OPEN) {
 		type="IN_OPEN";
 	}
-	if (event->mask & IN_CLOSE_NOWRITE) {
+	if (mask & IN_CLOSE_NOWRITE) {
 		type="IN_CLOSE_NOWRITE";
 	}
-	if (event->mask & IN_CLOSE_WRITE) {
+	if (mask & IN_CLOSE_WRITE) {
 		type="IN_CLOSE_WRITE";
 	}
-	if (event->mask & IN_DELETE) {
+	if (mask & IN_DELETE) {
 		type="IN_DELETE";
 	}
-	if (event->mask & IN_MOVE_SELF) {
+	if (mask & IN_MOVE_SELF) {
 		type="IN_MOVE_SELF";
 	}
-	if (event->mask & IN_MOVED_FROM) {
+	if (mask & IN_MOVED_FROM) {
 		type="IN_MOVED_FROM";
 	}
-	if (event->mask & IN_MOVED_TO) {
+	if (mask & IN_MOVED_TO) {
 		type="IN_MOVED_TO";
 	}
 
 	/* Print type of filesystem object */
-	if (event->mask & IN_ISDIR) {
+	if (mask & IN_ISDIR) {
 		isdir=" [directory]";
 	} else {
 		isdir=" [file]";
 	}
-	if (event->len) {
-		log_msg("INFO", "[%s][%s] %s : %s/%s %s", p_name, type, dir->key, dir->name, event->name, isdir);
-	} else {
-		log_msg("INFO", "[%s][%s] %s : %s/ %s", p_name, type, dir->key, dir->name, isdir);
-	}
+	log_msg("INFO", "[%s][%s] %s : %s/%s %s", p_name, type, dir->key, dir->name, filename, isdir);
 }

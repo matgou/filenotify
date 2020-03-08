@@ -62,9 +62,9 @@ void terminate_plugin()
  * \fn void handle_event()
  * \brief Write log from received event
  */
-void handle_event(char *p_name, directory_t *dir, const struct inotify_event *event)
+void handle_event(char *p_name, directory_t *dir, char *filename, uint32_t mask)
 {
-        if (event->mask & IN_ISDIR) {
+        if (mask & IN_ISDIR) {
                 return;
         }
 
@@ -83,31 +83,31 @@ void handle_event(char *p_name, directory_t *dir, const struct inotify_event *ev
 	char *value;
 	/* Print event type */
 	value="";
-	if (event->mask & IN_OPEN) {
+	if (mask & IN_OPEN) {
 		value="1";
 	}
-	if (event->mask & IN_CLOSE_NOWRITE) {
+	if (mask & IN_CLOSE_NOWRITE) {
 		value="1";
 	}
-	if (event->mask & IN_CLOSE_WRITE) {
+	if (mask & IN_CLOSE_WRITE) {
 		value="1";
 	}
-	if (event->mask & IN_DELETE) {
+	if (mask & IN_DELETE) {
 		value="0";
 	}
-        if (event->mask & IN_MOVE_SELF) {
+        if (mask & IN_MOVE_SELF) {
                 value="1";
         }
-        if (event->mask & IN_MOVED_FROM) {
+        if (mask & IN_MOVED_FROM) {
                 value="0";
         }
-        if (event->mask & IN_MOVED_TO) {
+        if (mask & IN_MOVED_TO) {
                 value="1";
         }
 
-	unsigned int cmd_size = strlen(config_getbykey(config_cmd)) + strlen(dir->name) + strlen(event->name) + strlen(value) + 1 - 2*3;
+	unsigned int cmd_size = strlen(config_getbykey(config_cmd)) + strlen(dir->name) + strlen(filename) + strlen(value) + 1 - 2*3;
 	char *cmd = malloc(sizeof(char) * cmd_size);
-	sprintf(cmd, config_getbykey(config_cmd), dir->name, event->name, value);
+	sprintf(cmd, config_getbykey(config_cmd), dir->name, filename, value);
 	log_msg("DEBUG", "Execute cmd: %s", cmd);
 
 	int status=-99;
@@ -116,5 +116,5 @@ void handle_event(char *p_name, directory_t *dir, const struct inotify_event *ev
 	log_msg("DEBUG", "Cmd return status = %i", status);
 	free(config_cmd);
 	free(cmd);
-	//	log_msg("INFO", "[%s] %s : %s/%s %s", type, dir->key, dir->name, event->name, isdir);
+	//	log_msg("INFO", "[%s] %s : %s/%s %s", type, dir->key, dir->name, filename, isdir);
 }

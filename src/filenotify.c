@@ -139,9 +139,6 @@ void filenotify_handleevents()
 					break;
 				}
 			}
-			if(event->len) {
-				log_msg("ERROR", "filename=%s", event->name);
-			}
 			if(dir != NULL && event->len > 0) {
 				// exec plugins
 				filenotify_execplugins(dir, event);
@@ -176,8 +173,10 @@ void filenotify_execplugins(directory_t *dir, const struct inotify_event *event_
 		plugin_arg_t *ptr = malloc(sizeof(plugin_arg_t));
 		ptr->plugin = plugins_lst_it;
 		ptr->dir = dir;
-		ptr->event = malloc(sizeof(struct inotify_event) + event_->len +1);
-		memcpy(ptr->event, event_, sizeof(struct inotify_event) + event_->len + 1);
+		ptr->event_filename = malloc(sizeof(char) * strlen(event_->name));
+		strcpy(ptr->event_filename, event_->name);
+		ptr->event_filename[strlen(event_->name) - 1] = '\0';
+		ptr->event_mask = event_->mask;
 
 		int thread_n = increase_thread_actif();
 		ptr->pthread_n = thread_n;
@@ -201,14 +200,13 @@ void *filenotify_execplugin(void *ptrc)
 	plugin_arg_t *ptr = (plugin_arg_t *) ptrc;
 	plugin_t *p = ptr->plugin;
 	directory_t *dir = ptr->dir;
-	struct inotify_event *event = ptr->event;
 
 	// Exec plugins
-	p->func_handle(p->p_name, dir, event);
+	p->func_handle(p->p_name, dir, ptr->event_filename, ptr->event_mask);
 
 	// Exit thread
-	free(event);
-	free(ptrc);
+	free(ptr->event_filename);
+	free(ptr);
 
 	decrease_thread_actif();
 	log_msg("DEBUG", "End of execution plugin (%s) in separate thread (nbthread = %i/%i)", p->p_name, nb_thread_actif, nb_max_thread);
