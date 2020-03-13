@@ -9,12 +9,15 @@ build:
   before_script:
     - apt update && apt -y install make autoconf
   script:
+    - libtoolize
+    - automake --add-missing
+    - autoreconf
+    - ./configure
     - make
-    - make package
+    - make dist
   artifacts:
     paths:
-      - bin/*
-      - filenotify.tar.gz
+      - filenotify-1.0.tar.gz
       # depending on your build setup it's most likely a good idea to cache outputs to reduce the build time
       # cache:
       #   paths:
