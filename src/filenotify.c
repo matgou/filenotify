@@ -25,7 +25,7 @@
  *
  */
 #include <dirent.h>
-#include <sys/inotify.h>
+#include <filenotify_engine.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -56,6 +56,53 @@ unsigned int nb_max_thread;
 /* Thread array (max 32 threads TODO) */
 pthread_t threads[32];
 
+/* FD to read event */
+int engine_fd;
+
+/**
+ * \fn int filenotify_mainloop()
+ * \brief main loop of program wait for inotify event and send it to handle
+ */
+int filenotify_mainloop()
+{
+
+	struct pollfd fds[2];
+
+	/* Create the file descriptor for accessing the inotify API */
+    engine_fd = engine_init();
+	if (engine_fd == -1) {
+		log_msg("ERROR", "Error while init engine %s : ", FILENOTIFY_ENGINE, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	directories = engine_subscribedirectory();
+
+	/* Inotify input */
+	fds[0].fd = engine_fd;
+	fds[0].events = POLLIN;
+
+	log_msg("INFO", "Listening for %s events...", FILENOTIFY_ENGINE);
+	while (1) {
+		int poll_num = poll(fds, 1, -1);
+		if (poll_num == -1) {
+			if (errno == EINTR) {
+				continue;
+			}
+			log_msg("ERROR", "Cannot poll event : %s", strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+		if (poll_num > 0) {
+			if (fds[0].revents & POLLIN) {
+				/* Inotify events are available */
+				engine_handleevents(engine_fd);
+			}
+		}
+
+	}
+	// never reach
+	return EXIT_SUCCESS;
+}
+
 /**
  * \fn void filenotify_displayhelp()
  * \brief Display help page
@@ -79,71 +126,14 @@ filenotify_displayhelp ()
 void
 filenotify_displaywelcome ()
 {
-	log_msg("INFO", " *** Welcome in filenotifier *** ");
-}
-
-/**
- * \fn void filenotify_handleevents()
- * \brief Read all available inotify events from the file descriptor 'inotify_fd'.
- */
-void filenotify_handleevents()
-{
-	/* Some systems cannot read integer variables if they are not
-           properly aligned. On other systems, incorrect alignment may
-           decrease performance. Hence, the buffer used for reading from
-           the inotify file descriptor should have the same alignment as
-           struct inotify_event. */
-
-	char buf[4096]
-	__attribute__ ((aligned(__alignof__(struct inotify_event))));
-	struct inotify_event *event;
-	ssize_t len;
-	char *ptr;
-
-        /* Loop while events can be read from inotify file descriptor. */
-        for (;;) {
-		/* Read some events. */
-		len = read(inotify_fd, buf, sizeof buf);
-		if (len == -1 && errno != EAGAIN) {
-			log_msg("ERROR", "Error while read inotify event : ", strerror(errno));
-			exit(EXIT_FAILURE);
-		}
-
-		/* If the nonblocking read() found no events to read, then
-                   it returns -1 with errno set to EAGAIN. In that case,
-                   we exit the loop. */
-		if (len <= 0) {
-                   break;
-		}
-
-		/* Loop over all events in the buffer */
-		for (ptr = buf; ptr < buf + len;
-		     ptr += sizeof(struct inotify_event) + event->len) {
-			event = (struct inotify_event *) ptr;
-			log_msg("DEBUG", "event inotify from descriptor %i", event->wd);
-			directory_t *dir = NULL;
-
-			directory_t *directory_lst_it = directories;
-			for(directory_lst_it = directories; directory_lst_it != NULL; directory_lst_it = directory_lst_it->next) {
-				if (directory_lst_it->wd == event->wd) {
-					log_msg("DEBUG", "dirname=%s descriptor=%i = %i", directory_lst_it->name, directory_lst_it->wd, event->wd);
-					dir = directory_lst_it;
-					break;
-				}
-			}
-			if(dir != NULL && event->len > 0) {
-				// exec plugins
-				filenotify_execplugins(dir, event);
-            		}
-		}
-	}
+	log_msg("INFO", " *** Welcome in filenotifier (%s) *** ", FILENOTIFY_ENGINE);
 }
 
 /**
  * \fn void filenotify_execplugins(directory *dir, const struct inotify_event *event)
  * \brief Exec plugins for an event
  */
-void filenotify_execplugins(directory_t *dir, const struct inotify_event *event_)
+void filenotify_execplugins(directory_t *dir, plugin_arg_t *event_)
 {
 	plugin_t *plugins_lst_it = plugins_lst;
   	pthread_attr_t thread_attr;
@@ -157,17 +147,17 @@ void filenotify_execplugins(directory_t *dir, const struct inotify_event *event_
 		log_msg("ERROR", "pthread_attr_setdetachstate error : %s", strerror(errno));
 		return ;
   	}
-	
+
 	for (plugins_lst_it = plugins_lst; plugins_lst_it != NULL; plugins_lst_it = plugins_lst_it->next) {
-		log_msg("DEBUG", "Start of execution plugin (%s) in separate thread (nbthread = %i/%i)", plugins_lst_it->p_name, nb_thread_actif,nb_max_thread);
+		log_msg("DEBUG", "Start plugin execution (%s) in separate thread (nbthread = %i/%i)", plugins_lst_it->p_name, nb_thread_actif,nb_max_thread);
 
 		// plugins_lst_it->func_handle(plugins_lst_it->p_name, dir, event);
 		plugin_arg_t *ptr = malloc(sizeof(plugin_arg_t));
 		ptr->plugin = plugins_lst_it;
 		ptr->dir = dir;
-		ptr->event_filename = malloc(sizeof(char) * (strlen(event_->name) + 1));
-		sprintf(ptr->event_filename, "%s", event_->name);
-		ptr->event_mask = event_->mask;
+		ptr->event_filename = malloc(sizeof(char) * (strlen(event_->event_filename) + 1));
+		sprintf(ptr->event_filename, "%s", event_->event_filename);
+		ptr->event_mask = event_->event_mask;
 
 		int thread_n = increase_thread_actif();
 		ptr->pthread_n = thread_n;
@@ -238,110 +228,6 @@ void decrease_thread_actif()
 }
 
 
-/**
- * \fn directory_t *filenotify_subscribedirectory()
- * \brief read config and start inotify to monitor each directory
- */
-directory_t *filenotify_subscribedirectory()
-{
-	directory_t *dir=NULL;
-	nlist_t *watch_directories;
-	int n_watch_directories=0;
-	nlist_t *np;
-
-	/* determine all directory to watch */
-	watch_directories=config_getbyprefix(config, "watch_directory.");
-	for(np = watch_directories; np != NULL; np = np->next) {
-		if(np->defn == NULL) {
-			continue;
-		}
-		DIR *d = opendir(np->defn);
-		struct dirent *dir_;
-		if (d)
-		{
-			directory_t *dir_save = dir;
-			dir = (directory_t *) malloc(sizeof(directory_t));
-			dir->next=dir_save;
-			dir->wd = inotify_add_watch(inotify_fd, np->defn, IN_MOVE | IN_CLOSE | IN_DELETE );
-			dir->name = strdup(np->defn);
-			dir->key = strdup(np->name);
-			dir->number = n_watch_directories;
-			if(dir->wd  == -1) {
-				log_msg("ERROR", "Cannot watch %s : %s", np->defn, strerror(errno));
-				exit(EXIT_FAILURE);
-			} else {
-				log_msg("DEBUG", "inotify descriptor=%i for directory %s/", dir->wd, np->defn);
-			}
-
-			n_watch_directories++;
-
-			while ((dir_ = readdir(d)) != NULL)
-			{
-				if(dir_->d_type != DT_DIR) {
-					struct inotify_event *event = malloc(sizeof(struct inotify_event) + (sizeof(char) * (strlen(dir_->d_name) + 10)));
-					sprintf(event->name, "%s", dir_->d_name);
-					event->len = strlen(dir_->d_name);
-					event->mask = IN_CLOSE_WRITE;
-					log_msg("INFO", "Presence initiale du fichier : %s/%s (%i) (%i)", dir->name, event->name, strlen(event->name), strlen(dir->name));
-					filenotify_execplugins(dir, event);
-					free(event);
-				}
-			}
-			closedir(d);
-		}
-	}
-	nlist_free(watch_directories);
-	return dir;
-}
-
-/**
- * \fn int filenotify_mainloop()
- * \brief main loop of program wait for inotify event and send it to handle
- */
-int filenotify_mainloop()
-{
-	nfds_t nfds;
-	struct pollfd fds[2];
-
-	/* Create the file descriptor for accessing the inotify API */
-	inotify_fd = inotify_init();
-	if (inotify_fd == -1) {
-		log_msg("ERROR", "Error while init inotify : ", strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-
-	directories = filenotify_subscribedirectory();
-
-
-
-	/* Prepare for polling */
-	nfds = 1;
-
-	/* Inotify input */
-	fds[0].fd = inotify_fd;
-	fds[0].events = POLLIN;
-
-	log_msg("INFO", "Listening for events...");
-	while (1) {
-		int poll_num = poll(fds, nfds, -1);
-		if (poll_num == -1) {
-			if (errno == EINTR) {
-				continue;
-			}
-			log_msg("ERROR", "Cannot poll event : %s", strerror(errno));
-			exit(EXIT_FAILURE);
-		}
-		if (poll_num > 0) {
-			if (fds[0].revents & POLLIN) {
-				/* Inotify events are available */
-				filenotify_handleevents();
-			}
-		}
-
-	}
-	// never reach
-	return EXIT_SUCCESS;
-}
 
 /**
  * \fn plugin_t *filenotify_loadplugins()
@@ -443,7 +329,7 @@ void filenotify_sighandler(int signo)
 
 		// Init and load new plugin list
 		plugins_lst = filenotify_loadplugins();
-		directories = filenotify_subscribedirectory();
+		directories = engine_subscribedirectory();
 	} else if (signo == SIGUSR2) {
 		log_msg("INFO", "received SIGUSR2");
 	} else if (signo == SIGINT) {
@@ -466,7 +352,7 @@ void filenotify_directory_free(directory_t *l) {
 	if(l->next != NULL) {
 		filenotify_directory_free(l->next);
 	}
-	inotify_rm_watch(inotify_fd,l->wd);
+	engine_rm_watch(l->wd);
 	free(l->name);
 	free(l->key);
 	free(l);
@@ -597,7 +483,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	/* 
+	/*
 	  Convert config max_thread to int
 	*/
 	char *max_thread_string = config_getbykey("max_thread");
@@ -621,7 +507,7 @@ int main(int argc, char *argv[])
 		if((filenotify_pid_file = fopen(filenotify_pid_filepath, "w")) == NULL) {
 			log_msg("ERROR", "can't open pid file path for writing");
 		} else {
-			fprintf(filenotify_pid_file, "%d", pid); 
+			fprintf(filenotify_pid_file, "%d", pid);
 			fclose(filenotify_pid_file);
 		}
 	}
@@ -632,7 +518,7 @@ int main(int argc, char *argv[])
 		fclose(stdin);
 		fclose(stdout);
 		fclose(stderr);
-	}	
+	}
 	/*
 	   If pid > 0, in parent process
 	 */

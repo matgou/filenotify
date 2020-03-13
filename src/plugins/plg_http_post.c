@@ -24,7 +24,6 @@
  * \date 2019/02/25
  *
  */
-#include <sys/inotify.h>
 #include <filenotify.h>
 #include <plg_notify.h>
 #include <nlist.h>
