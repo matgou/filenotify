@@ -30,7 +30,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <sys/inotify.h>
 #include <errno.h>
 #include <filenotify.h>
 #include <string.h>
