@@ -12,9 +12,9 @@ You can download binary from this link : [filenotify.tar.gz](https://framagit.or
 Use Make to build and install the binarny
 
 ```bash
-automake --add-missing
 libtoolize
 autoreconf
+automake --add-missing
 ./configure 
 
 make && sudo make install
