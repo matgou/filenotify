@@ -1,6 +1,5 @@
 SUBDIRS = plugins
 AM_CFLAGS = -I$(srcdir)/include
-noinst_PROGRAMS = $(DBG)
 bin_PROGRAMS = filenotify
 filenotify_SOURCES = filenotify.c core/log.c core/config.c core/nlist.c
 if INOTIFY
