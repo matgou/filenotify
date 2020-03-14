@@ -30,7 +30,7 @@ test:
     - sh -c "automake --add-missing; autoreconf; automake --add-missing;"
     - ./configure
     - make
-    - sh -c "make check; true"
+    - make check
   artifacts:
     paths:
       - tests/logtest/logtest.sh.log
