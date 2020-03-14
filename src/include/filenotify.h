@@ -23,9 +23,9 @@
 
 /* Check if linux inotify engine exist */
 #if USE_INOTIFY
-#define FILENOTIFY_ENGINE "INOTIFY_ENGINE"
+#define FILENOTIFY_ENGINE "inotify"
 #else
-#define FILENOTIFY_ENGINE "TIMER_ENGINE"
+#define FILENOTIFY_ENGINE "timer"
 #endif
 
 /**

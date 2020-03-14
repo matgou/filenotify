@@ -111,6 +111,7 @@ int filenotify_mainloop()
 void
 filenotify_displayhelp ()
 {
+	fprintf(stdout, "Package : %s-%s (please report bug to %s)\n", PACKAGE_STRING, FILENOTIFY_ENGINE, PACKAGE_BUGREPORT);
 	fprintf(stdout, "Usage : filenotify -c [config] \n");
 	fprintf(stdout, "Options :\n");
 	fprintf(stdout, "  -c [config]                        Configuration file\n");
