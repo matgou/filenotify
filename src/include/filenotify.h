@@ -19,9 +19,10 @@
 #ifndef filenotify_h
 #define filenotify_h
 #include <stdint.h>
+#include "../../filenotify_config.h"
 
 /* Check if linux inotify engine exist */
-#if __linux__
+#if USE_INOTIFY
 #define FILENOTIFY_ENGINE "INOTIFY_ENGINE"
 #else
 #define FILENOTIFY_ENGINE "TIMER_ENGINE"
