@@ -31,7 +31,7 @@
 #include <string.h>
 
 /* Config of timer freq */
-#define __TIMER_WAIT_SEC__ 10
+#define __TIMER_WAIT_SEC__ 1
 
 /* The pipe */
 int timer_fd[2];
@@ -39,42 +39,101 @@ int timer_fd[2];
 /* The timer_thread */
 pthread_t timer_thread;
 
-static void send_file_present();
+/* The filelist */
+typedef struct {
+        char *path; /*!< the path of filename */
+        plugin_arg_t *event;  /*!< the event of creation */
+        void *next;     /*!< the next element descriptor */
+} timer_engine_plugin_arg_list_t;
+
+timer_engine_plugin_arg_list_t *files_list;
+
+static void timer_engine_send_events();
 
 static void *timer_engine_loop(void *arg)
 {
     for(;;) {
         log_msg("DEBUG", "Timer_engine tic ... ");
-	send_file_present();
+        timer_engine_send_events();
 
         sleep(__TIMER_WAIT_SEC__);
     }
     return NULL;
 }
 
-static void send_file_present() {
+timer_engine_plugin_arg_list_t *timer_engine_find(char *dirpath, char *filename) {
+    // build path
+    char *filepath = malloc(strlen(dirpath) + strlen("/") + strlen(filename) + 1);
+    sprintf(filepath, "%s/%s", dirpath, filename);
+    timer_engine_plugin_arg_list_t *e;
+    // Search for elem
+    for(e = files_list; e != NULL; e = e->next) {
+        if(strcmp(filepath, e->path) == 0) {
+                free(filepath);
+                return e;
+        }
+    }
+    // free and return
+    free(filepath);
+    return e;
+}
+
+static void timer_engine_send_events() {
 	directory_t *dir;
 	struct dirent *dir_;
 
+    /* Search for new file in elem */
 	for(dir = directories; dir != NULL; dir = dir->next) {
 		DIR *d = opendir(dir->name);
 		while ((dir_ = readdir(d)) != NULL)
 		{
 			if(dir_->d_type != DT_DIR) {
-				plugin_arg_t *event = malloc(sizeof(plugin_arg_t));
-				event->dir = dir;
-				event->event_filename = strdup(dir_->d_name);
-				event->event_mask = IN_CLOSE_WRITE;
-				log_msg("INFO", "Presence du fichier : %s/%s", dir->name, event->event_filename);
+                if(timer_engine_find(dir->name, dir_->d_name) == NULL) {
+                    plugin_arg_t *event = malloc(sizeof(plugin_arg_t));
+                    event->dir = dir;
+                    event->event_filename = strdup(dir_->d_name);
+                    event->event_mask = IN_CLOSE_WRITE;
+                    log_msg("INFO", "Presence du fichier : %s/%s", dir->name, event->event_filename);
 
-				write(timer_fd[1], event, sizeof(plugin_arg_t));
-				
-				//free(event->event_filename);
-				free(event);
+                    write(timer_fd[1], event, sizeof(plugin_arg_t));
+
+                    timer_engine_plugin_arg_list_t *elem = (timer_engine_plugin_arg_list_t *) malloc(sizeof(timer_engine_plugin_arg_list_t));
+                    elem->event = event;
+                    elem->path = malloc(strlen(dir->name) + strlen("/") + strlen(event->event_filename) + 1);
+                    sprintf(elem->path, "%s/%s", dir->name, event->event_filename);
+                    elem->next = files_list;
+                    files_list = elem;
+                    // TODO
+                    //free(elem->path)
+                    //free(elem)
+                    //free(event->event_filename);
+                    //free(event);
+                }
 			}
 		}
 		closedir(d);
 	}
+
+	/* Check if file are delete */
+    timer_engine_plugin_arg_list_t *e;
+    timer_engine_plugin_arg_list_t *e_prev = NULL;
+
+    for(e = files_list; e != NULL; e = e->next) {
+        if(access(e->path, F_OK) != 0) {
+                plugin_arg_t *event = e->event;
+                event->event_mask = IN_DELETE;
+                write(timer_fd[1], event, sizeof(plugin_arg_t));
+                free(event);
+                if(e_prev != NULL) {
+                    e_prev->next = e->next;
+                } else {
+                    files_list = e->next;
+                }
+                free(e);
+        } else {
+            e_prev = e;
+        }
+    }
 }
 
 int engine_init()
