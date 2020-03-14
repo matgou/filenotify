@@ -26,4 +26,8 @@ build:
 test:
   stage: test
   script:
+    - libtoolize
+    - sh -c "automake --add-missing; autoreconf; automake --add-missing;"
+    - ./configure
+    - make
     - make check
