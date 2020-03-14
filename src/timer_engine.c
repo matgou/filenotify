@@ -129,6 +129,7 @@ static void timer_engine_send_events() {
                 } else {
                     files_list = e->next;
                 }
+                free(e->path);
                 free(e);
         } else {
             e_prev = e;
