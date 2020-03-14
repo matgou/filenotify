@@ -10,8 +10,7 @@ build:
     - apt update && apt -y install make autoconf
   script:
     - libtoolize
-    - automake --add-missing
-    - autoreconf
+    - automake --add-missing; autoreconf; automake --add-missing
     - ./configure
     - make
     - make dist
