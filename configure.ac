@@ -16,7 +16,7 @@ esac],[inotify=$have_inotify])
 AS_IF([test x$inotify = xtrue], [AC_DEFINE([USE_INOTIFY], [1], [Compile with inotify usage to detect fs change])])
 AM_CONDITIONAL([USE_INOTIFY], [test x$inotify = xtrue])
 
-AC_CONFIG_FILES([Makefile src/Makefile src/plugins/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/plugins/Makefile tests/Makefile])
 AC_ENABLE_SHARED
 AC_DISABLE_STATIC
 AC_PROG_LIBTOOL(libtool)

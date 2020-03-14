@@ -1,0 +1,1 @@
+TESTS=logtest/logtest.sh 
