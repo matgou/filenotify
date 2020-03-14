@@ -1,4 +1,4 @@
-#!/bin/env sh
+#!/bin/bash
 cd $( dirname $0 ) 
 config=$( basename $0 ).config
 pid=/tmp/$( basename $0 ).pid
