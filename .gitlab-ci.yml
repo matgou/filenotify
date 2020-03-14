@@ -30,7 +30,11 @@ test:
     - sh -c "automake --add-missing; autoreconf; automake --add-missing;"
     - ./configure
     - make
-    - make check
+    - sh -c "make check"
   artifacts:
     paths:
-      - tests/*/*.log
+      - tests/logtest/logtest.sh.log
+      - tests/reload-test/reload-test.sh.log
+      - tests/valgrindtest/valgrindtest.sh.log
+      - tests/test-suite.log
+
