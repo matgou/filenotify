@@ -31,3 +31,6 @@ test:
     - ./configure
     - make
     - make check
+  artifacts:
+    paths:
+      - tests/*/*.log
