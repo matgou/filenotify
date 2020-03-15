@@ -11,12 +11,15 @@ build:
   script:
     - libtoolize
     - sh -c "automake --add-missing; autoreconf; automake --add-missing;"
-    - ./configure
+    - ./configure --prefix="$(pwd)/build"
     - make
     - make dist
+    - make install
+    - sh -c "cd build; tar czvf ../filenotify-linux_binary-1.0.tar.gz *"
   artifacts:
     paths:
       - filenotify-1.0.tar.gz
+      - filenotify-linux_binary-1.0.tar.gz
       # depending on your build setup it's most likely a good idea to cache outputs to reduce the build time
       # cache:
       #   paths:
