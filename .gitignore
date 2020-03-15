@@ -3,6 +3,8 @@ filenotify.depend
 filenotify.layout
 filenotify*.tar.gz
 filenotify_config.h.in*
+filenotify_config.h
+libtool
 # http://www.gnu.org/software/automake
 
 Makefile.in
