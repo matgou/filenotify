@@ -9,12 +9,17 @@ build:
   before_script:
     - apt update && apt -y install make autoconf
   script:
+    - libtoolize
+    - sh -c "automake --add-missing; autoreconf; automake --add-missing;"
+    - ./configure --prefix="$(pwd)/build"
     - make
-    - make package
+    - make dist
+    - make install
+    - sh -c "cd build; tar czvf ../filenotify-linux_binary-1.0.tar.gz *"
   artifacts:
     paths:
-      - bin/*
-      - filenotify.tar.gz
+      - filenotify-1.0.tar.gz
+      - filenotify-linux_binary-1.0.tar.gz
       # depending on your build setup it's most likely a good idea to cache outputs to reduce the build time
       # cache:
       #   paths:
@@ -23,5 +28,19 @@ build:
 # run tests using the binary built before
 test:
   stage: test
+  before_script:
+    - apt update && apt -y install make autoconf valgrind
   script:
+    - libtoolize
+    - sh -c "automake --add-missing; autoreconf; automake --add-missing;"
+    - ./configure
+    - make
     - make check
+  artifacts:
+    paths:
+      - tests/logtest/logtest.sh.log
+      - tests/reload-test/reload-test.sh.log
+      - tests/valgrindtest/valgrindtest.sh.log
+      - tests/test-suite.log
+    when: on_failure
+

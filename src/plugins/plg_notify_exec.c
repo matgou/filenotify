@@ -24,7 +24,6 @@
  * \date 2019/02/25
  *
  */
-#include <sys/inotify.h>
 #include <filenotify.h>
 #include <plg_notify.h>
 #include <config.h>
@@ -35,7 +34,7 @@
 
 /**
  * \fn void init_plugin()
- * \brief Initialise the plugin 
+ * \brief Initialise the plugin
  */
 void init_plugin(char *p_name, nlist_t *config_ref)
 {

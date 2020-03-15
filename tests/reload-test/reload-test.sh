@@ -15,11 +15,11 @@ loglevel=DEBUG
 watch_directory.0=/tmp/test-$( basename $0 )-1
 watch_directory.1=/tmp/test-$( basename $0 )-2
 
-plugins_dir=../bin/
-plugins.log=plg_notify_log.so
+plugins_dir=../../src/plugins/.libs/
+plugins.log=libplg_notify_log.so
 EOF
 
-../bin/filenotify -c ${config} -i $pidf -d
+../../src/filenotify -c ${config} -i $pidf -d
 sleep 1
 pid=$( cat $pidf )
 
@@ -49,7 +49,7 @@ rm -v /tmp/test-$( basename $0 )-1/* /tmp/test-$( basename $0 )-2/*
 sleep 3
 
 # Ajout d'un plugin au fichier de conf et reload
-echo "plugins.exec=plg_notify_exec.so" >> ${config}
+echo "plugins.exec=libplg_notify_exec.so" >> ${config}
 echo "exec.cmd=echo __coucou__ %s %s %s >> /tmp/output-$( basename $0 ).txt" >> ${config}
 sleep 1
 echo "kill -10 ${pid}"

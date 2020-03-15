@@ -1,4 +1,4 @@
-#!/bin/env sh
+#!/bin/bash
 cd $( dirname $0 ) 
 config=$( basename $0 ).config
 pid=/tmp/$( basename $0 ).pid
@@ -14,17 +14,18 @@ loglevel=INFO
 watch_directory.0=/tmp/test-$( basename $0 )-1
 watch_directory.1=/tmp/test-$( basename $0 )-2
 
-plugins_dir=../bin/
-plugins.log=plg_notify_log.so
+plugins_dir=../../src/plugins/.libs/
+plugins.log=libplg_notify_log.so
 EOF
 
-../bin/filenotify -c ${config} -i $pid -d
+../../src/filenotify -c ${config} -i $pid -d
 
-sleep 2
+sleep 5
+
 echo "hello world" > /tmp/test-$( basename $0 )-1/test1-hello
 echo "hello world" > /tmp/test-$( basename $0 )-2/test2-hello
 
-sleep 1
+sleep 5
 
 grep -q test1-hello /tmp/$( basename $0 ).log
 grep_rc=$?

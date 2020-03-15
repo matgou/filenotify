@@ -16,71 +16,13 @@
 *   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA         *
 *   02111-1307 USA.                                                           *
 ******************************************************************************/
-/**
- * \file plg_notify_log.c
- * \brief Plugin pour la notification via le fichier de log
- * \author Goulin.M
- * \version 0.1
- * \date 2019/02/22
- *
- */
+#ifndef filenotify_engine_h
+#define filenotify_engine_h
 #include <filenotify.h>
-#include <plg_notify.h>
-#include <config.h>
-#include <log.h>
 
-/**
- * \fn void init_plugin()
- * \brief Initialise the plugin
- */
-void init_plugin(char *p_name, nlist_t *config_ref)
-{
-	config = nlist_dup(config_ref);
-        log_msg("DEBUG", "Init plugins : plg_notify_log(%s)", p_name);
-}
+int engine_init();
+void engine_handleevents(int engine_fd);
+directory_t *engine_subscribedirectory();
+void engine_rm_watch(int watch_descriptor);
 
-/**
- * \fn void terminate_plugin()
- * \brief free alloc mem
- */
-void terminate_plugin()
-{
-	if(config != NULL) {
-		nlist_free(config);
-		config = NULL;
-	}
-}
-
-/**
- * \fn void handle_event()
- * \brief Write log from received event
- */
-void handle_event(char *p_name, directory_t *dir, char *filename, uint32_t mask)
-{
-	char *type="";
-	/* Print event type */
-	if (mask & IN_OPEN) {
-		type="IN_OPEN";
-	}
-	if (mask & IN_CLOSE_NOWRITE) {
-		type="IN_CLOSE_NOWRITE";
-	}
-	if (mask & IN_CLOSE_WRITE) {
-		type="IN_CLOSE_WRITE";
-	}
-	if (mask & IN_DELETE) {
-		type="IN_DELETE";
-	}
-	if (mask & IN_MOVE_SELF) {
-		type="IN_MOVE_SELF";
-	}
-	if (mask & IN_MOVED_FROM) {
-		type="IN_MOVED_FROM";
-	}
-	if (mask & IN_MOVED_TO) {
-		type="IN_MOVED_TO";
-	}
-
-	/* Print type of filesystem object */
-	log_msg("INFO", "[%s][%s] %s : %s/%s", p_name, type, dir->key, dir->name, filename);
-}
+#endif
