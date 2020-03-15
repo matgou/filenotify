@@ -78,6 +78,20 @@ timer_engine_plugin_arg_list_t *timer_engine_find(char *dirpath, char *filename)
     return e;
 }
 
+
+void timer_engine_free_files_list(timer_engine_plugin_arg_list_t *e) {
+    if(e == NULL) {
+        return;
+    }
+    if(e->next) {
+            timer_engine_free_files_list(e->next);
+    }
+    if(e->path) {
+        free(e->path);
+    }
+    free(e);
+}
+
 static void timer_engine_send_events() {
 	directory_t *dir;
 	struct dirent *dir_;
@@ -90,9 +104,12 @@ static void timer_engine_send_events() {
 			if(dir_->d_type != DT_DIR) {
                 if(timer_engine_find(dir->name, dir_->d_name) == NULL) {
                     plugin_arg_t *event = malloc(sizeof(plugin_arg_t));
+                    memset(event, '\0', sizeof(plugin_arg_t));
                     event->dir = dir;
                     event->event_filename = strdup(dir_->d_name);
                     event->event_mask = IN_CLOSE_WRITE;
+                    event->plugin = (void *) NULL;
+                    event->pthread_n = -1;
                     log_msg("INFO", "Presence du fichier : %s/%s", dir->name, event->event_filename);
 
                     write(timer_fd[1], event, sizeof(plugin_arg_t));
@@ -116,25 +133,23 @@ static void timer_engine_send_events() {
 
 	/* Check if file are delete */
     timer_engine_plugin_arg_list_t *e;
-    timer_engine_plugin_arg_list_t *e_prev = NULL;
+    timer_engine_plugin_arg_list_t *files_list_new = NULL;
 
     for(e = files_list; e != NULL; e = e->next) {
-        if(access(e->path, F_OK) != 0) {
+        if(access(e->path, F_OK) == 0) {
+            timer_engine_plugin_arg_list_t *elem = (timer_engine_plugin_arg_list_t *) malloc(sizeof(timer_engine_plugin_arg_list_t));
+            elem->next=files_list_new;
+            elem->event=e->event;
+            elem->path=strdup(e->path);
+            files_list_new=elem;
+        } else {
                 plugin_arg_t *event = e->event;
                 event->event_mask = IN_DELETE;
                 write(timer_fd[1], event, sizeof(plugin_arg_t));
-                free(event);
-                if(e_prev != NULL) {
-                    e_prev->next = e->next;
-                } else {
-                    files_list = e->next;
-                }
-                free(e->path);
-                free(e);
-        } else {
-            e_prev = e;
         }
     }
+    timer_engine_free_files_list(files_list);
+    files_list = files_list_new;
 }
 
 int engine_init()
@@ -208,7 +223,8 @@ void engine_handleevents(int engine_fd)
 			log_msg("DEBUG", "event from directory %s", dir->name);
 
 			filenotify_execplugins(dir, event);
-
+            // free
+            //free(event->event_filename);
 		}
 	}
 }
@@ -241,16 +257,12 @@ directory_t *engine_subscribedirectory()
 			dir->name = strdup(np->defn);
 			dir->key = strdup(np->name);
 			dir->number = n_watch_directories;
-			if(dir->wd  == -1) {
-				log_msg("ERROR", "Cannot watch %s : %s", np->defn, strerror(errno));
-				exit(EXIT_FAILURE);
-			} else {
-				log_msg("DEBUG", "Start watch directory %s/", np->defn);
-			}
+			log_msg("DEBUG", "Start watch directory %s/", np->defn);
 
 			n_watch_directories++;
 
 		}
+		closedir(d);
 	}
 	nlist_free(watch_directories);
 	return dir;

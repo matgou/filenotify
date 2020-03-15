@@ -167,7 +167,6 @@ void filenotify_execplugins(directory_t *dir, plugin_arg_t *event_)
     		}
 
 	}
-
 	//pthread_attr_destroy(&thread_attr);
 	return;
 }
