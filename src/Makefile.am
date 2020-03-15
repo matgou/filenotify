@@ -1,4 +1,4 @@
-SUBDIRS = plugins
+SUBDIRS = plugins core include
 AM_CFLAGS = -I$(srcdir)/include
 bin_PROGRAMS = filenotify
 filenotify_SOURCES = filenotify.c core/log.c core/config.c core/nlist.c
