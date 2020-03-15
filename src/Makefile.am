@@ -1,6 +1,7 @@
-SUBDIRS = plugins core include
+SUBDIRS = plugins
 AM_CFLAGS = -I$(srcdir)/include
 bin_PROGRAMS = filenotify
+nobase_include_HEADERS = include/*.h
 filenotify_SOURCES = filenotify.c core/log.c core/config.c core/nlist.c
 if USE_INOTIFY
 filenotify_SOURCES += inotify_engine.c
