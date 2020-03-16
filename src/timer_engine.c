@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <sys/stat.h>
 #include <string.h>
 
 /* Config of timer freq */
@@ -101,7 +102,12 @@ static void timer_engine_send_events() {
 		DIR *d = opendir(dir->name);
 		while ((dir_ = readdir(d)) != NULL)
 		{
-			if(dir_->d_type != DT_DIR) {
+			// POSTFIX compatibility to find if structure is dir or special link
+			char *currentPath = malloc(strlen(dir->name) + strlen("/") + strlen(dir_->d_name));
+			struct stat statbuf;
+			stat(currentPath, &statbuf);
+			free(currentPath);
+			if(!S_ISDIR(statbuf.st_mode) && strcmp(dir_->d_name, ".") != 0 && strcmp(dir_->d_name, "..") != 0) {
                 if(timer_engine_find(dir->name, dir_->d_name) == NULL) {
                     plugin_arg_t *event = malloc(sizeof(plugin_arg_t));
                     memset(event, '\0', sizeof(plugin_arg_t));

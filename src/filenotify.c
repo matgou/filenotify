@@ -250,7 +250,7 @@ plugin_t *filenotify_loadplugins()
 
 		log_msg("INFO", "Chargement du plugins : %s", plugin_path);
 		// Charging .so
-		void *plugin = dlopen(plugin_path, RTLD_LAZY | RTLD_DEEPBIND);
+		void *plugin = dlopen(plugin_path, RTLD_LAZY);
 		if (!plugin)
 		{
 			log_msg("ERROR", "Cannot load %s: %s", plugin_name, dlerror ());
