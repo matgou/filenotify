@@ -118,7 +118,7 @@ void handle_event(char *p_name, directory_t *dir, char *filename, uint32_t mask)
 				value="1";
 		}
 
-		unsigned int cmd_size = strlen(extra_post_data_config_len + config_getbykey(config_cmd)) + strlen(dir->name) + strlen(filename) + strlen(value) + 1 - 2*3;
+		unsigned int cmd_size = extra_post_data_config_len + strlen(config_getbykey(config_cmd)) + strlen(dir->name) + strlen(filename) + strlen(value) + 1 - 2*3;
 		char *cmd = malloc(sizeof(char) * cmd_size);
 		sprintf(cmd, config_getbykey(config_cmd), dir->name, filename, extra_post_data_config, value);
 		log_msg("DEBUG", "Execute cmd: %s", cmd);
