@@ -50,7 +50,7 @@ then
 fi
 
 
-rm /tmp/test-$( basename $0 )-1 /tmp/test-$( basename $0 )-2
+rm /tmp/test-$( basename $0 )-1/test1-hello /tmp/test-$( basename $0 )-2/test2-hello
 sleep 2
 grep -q "/tmp/test-extraarg-test.sh-1,test1-hello,metadata=test1,0" /tmp/$( basename $0 )-result.csv
 grep_rc=$?
