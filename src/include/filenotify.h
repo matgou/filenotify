@@ -61,8 +61,8 @@ typedef struct {
 	plugin_t *plugin;
 	directory_t *dir;
 	int pthread_n;
-	char *event_filename;
 	unsigned int event_mask;
+	char *event_filename;
 } plugin_arg_t;
 
 
