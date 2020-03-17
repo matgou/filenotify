@@ -110,9 +110,10 @@ static void timer_engine_send_events() {
 			if(!S_ISDIR(statbuf.st_mode) && strcmp(dir_->d_name, ".") != 0 && strcmp(dir_->d_name, "..") != 0) {
                 if(timer_engine_find(dir->name, dir_->d_name) == NULL) {
                     plugin_arg_t *event = malloc(sizeof(plugin_arg_t));
-                    memset(event, '\0', sizeof(plugin_arg_t));
+                    //memset(event, '\0', sizeof(plugin_arg_t));
                     event->dir = dir;
-                    event->event_filename = strdup(dir_->d_name);
+                    event->event_filename = malloc(strlen(dir_->d_name));
+		    sprintf(event->event_filename, "%s", dir_->d_name);
                     event->event_mask = IN_CLOSE_WRITE;
                     event->plugin = (void *) NULL;
                     event->pthread_n = -1;
@@ -229,8 +230,8 @@ void engine_handleevents(int engine_fd)
 			log_msg("DEBUG", "event from directory %s", dir->name);
 
 			filenotify_execplugins(dir, event);
-            // free
-            //free(event->event_filename);
+			// free
+			free(event->event_filename);
 		}
 	}
 }
