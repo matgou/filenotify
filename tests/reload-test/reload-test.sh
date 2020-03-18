@@ -3,6 +3,7 @@ cd $( dirname $0 )
 config=$( basename $0 ).config
 pidf=/tmp/$( dirname $0 ).pid
 global_rc=0
+plg_ext=$( ls ../../src/plugins/.libs/*notify_log*dll ../../src/plugins/.libs/*notify_log*so 2>/dev/null | head -1  | sed "s/.*notify_log//" )
 
 mkdir /tmp/test-$( basename $0 )-1
 mkdir /tmp/test-$( basename $0 )-2
@@ -16,7 +17,7 @@ watch_directory.0=/tmp/test-$( basename $0 )-1
 watch_directory.1=/tmp/test-$( basename $0 )-2
 
 plugins_dir=../../src/plugins/.libs/
-plugins.log=libplg_notify_log.so
+plugins.log=libplg_notify_log$plg_ext
 EOF
 
 ../../src/filenotify -c ${config} -i $pidf -d
@@ -49,7 +50,7 @@ rm -v /tmp/test-$( basename $0 )-1/* /tmp/test-$( basename $0 )-2/*
 sleep 3
 
 # Ajout d'un plugin au fichier de conf et reload
-echo "plugins.exec=libplg_notify_exec.so" >> ${config}
+echo "plugins.exec=libplg_notify_exec$plg_ext" >> ${config}
 echo "exec.cmd=echo __coucou__ %s %s %s >> /tmp/output-$( basename $0 ).txt" >> ${config}
 sleep 1
 echo "kill -10 ${pid}"

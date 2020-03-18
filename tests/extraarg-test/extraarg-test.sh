@@ -3,6 +3,7 @@ cd $( dirname $0 )
 config=$( basename $0 ).config
 pidf=/tmp/$( basename $0 ).pid
 global_rc=0
+plg_ext=$( ls ../../src/plugins/.libs/*notify_log*dll ../../src/plugins/.libs/*notify_log*so 2>/dev/null | head -1  | sed "s/.*notify_log//" )
 
 mkdir /tmp/test-$( basename $0 )-1
 mkdir /tmp/test-$( basename $0 )-2
@@ -17,8 +18,8 @@ watch_directory.1=/tmp/test-$( basename $0 )-2
 watch_directory.1.extra_post_data=metadata=test2
 
 plugins_dir=../../src/plugins/.libs/
-plugins.log=libplg_notify_log.so
-plugins.exec=libplg_notify_exec.so
+plugins.log=libplg_notify_log$plg_ext
+plugins.exec=libplg_notify_exec$plg_ext
 
 exec.cmd=echo "%s,%s,%s,%s" >> /tmp/$( basename $0 )-result.csv
 EOF
