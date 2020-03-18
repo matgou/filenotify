@@ -157,6 +157,7 @@ static void timer_engine_send_events() {
                 plugin_arg_t *event = e->event;
                 event->event_mask = IN_DELETE;
                 write(timer_fd[1], event, sizeof(plugin_arg_t));
+		free(event);
         }
     }
     timer_engine_free_files_list(files_list);
