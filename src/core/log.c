@@ -41,26 +41,33 @@ pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
  * \return 0 if no display, 1 if display
  */
 int
-log_isleveldisplay(char *tag)
+log_isleveldisplay (char *tag)
 {
-	if(config_getbykey("loglevel") == NULL) {
-		printf("[NOLOG] ");
-		return 1;
+  if (config_getbykey ("loglevel") == NULL)
+    {
+      printf ("[NOLOG] ");
+      return 1;
+    }
+  if (strcmp ("DEBUG", config_getbykey ("loglevel")) == 0)
+    {
+      return 1;
+    }
+  if (strcmp ("INFO", config_getbykey ("loglevel")) == 0)
+    {
+      if (strcmp (tag, "DEBUG") == 0)
+	{
+	  return 0;
 	}
-	if(strcmp("DEBUG", config_getbykey("loglevel"))==0) {
-		return 1;
+      else
+	{
+	  return 1;
 	}
-	if(strcmp("INFO", config_getbykey("loglevel")) == 0) {
-		if(strcmp(tag, "DEBUG")==0) {
-			return 0;
-		} else {
-			return 1;
-		}
-	}
-	if(strcmp("ERROR", tag)==0) {
-		return 1;
-	}
-	return 0;
+    }
+  if (strcmp ("ERROR", tag) == 0)
+    {
+      return 1;
+    }
+  return 0;
 }
 
 /**
@@ -72,58 +79,62 @@ log_isleveldisplay(char *tag)
  * \return 0 in case of success
  */
 int
-log_msg(char *tag, char* msg, ...)
+log_msg (char *tag, char *msg, ...)
 {
-	// Check if log must be display
-	if(!log_isleveldisplay(tag)) {
-		return 0;
-	}
+  // Check if log must be display
+  if (!log_isleveldisplay (tag))
+    {
+      return 0;
+    }
 
-	/* lock mutex */
-	pthread_mutex_lock(&log_mutex);
+  /* lock mutex */
+  pthread_mutex_lock (&log_mutex);
 
-	// Parameters : 
-	const char *separator=" : ";
-	// Get curtime and put in in string
-	time_t curtime = time(0);
-	char *timeString = malloc(sizeof(char) * strlen(ctime(&curtime)) + 1 );
-	sprintf(timeString, "%s", ctime(&curtime));
-	
-	// remove ending \n
-	timeString[strlen(timeString)-1]='\0';
+  // Parameters : 
+  const char *separator = " : ";
+  // Get curtime and put in in string
+  time_t curtime = time (0);
+  char *timeString = malloc (sizeof (char) * strlen (ctime (&curtime)) + 1);
+  sprintf (timeString, "%s", ctime (&curtime));
 
-	// Calculate the full message with concat tag, timestring, separator, message, end
-	int message_len = strlen(msg) + 2 + strlen(tag) + strlen(timeString) + strlen(separator)*2 ;
-	char *format = (char *) malloc(message_len * sizeof(char));
-	sprintf(format, "%s%s%s%s%s\n", timeString, separator, tag, separator, msg);
+  // remove ending \n
+  timeString[strlen (timeString) - 1] = '\0';
 
-	// use va_list to use many args
-  	va_list args;
-	va_start (args, msg);
-	
-	// print to stdout
-	vfprintf(stdout, format, args );
-	va_end (args);
+  // Calculate the full message with concat tag, timestring, separator, message, end
+  int message_len =
+    strlen (msg) + 2 + strlen (tag) + strlen (timeString) +
+    strlen (separator) * 2;
+  char *format = (char *) malloc (message_len * sizeof (char));
+  sprintf (format, "%s%s%s%s%s\n", timeString, separator, tag, separator,
+	   msg);
 
-	// print to a logfile
-	va_start (args, msg);
-	if(logFilePointer == NULL)
-	{
-		logFilePointer=fopen(config_getbykey("logfile"), "a+");
-	}
-	if(logFilePointer != NULL)
-	{
-		vfprintf(logFilePointer, format, args );
-	}
-	fflush(logFilePointer);
-	va_end (args);
+  // use va_list to use many args
+  va_list args;
+  va_start (args, msg);
 
-	// free alloc format
-	free(format);
-	free(timeString);
-	// unlock mutex
-	pthread_mutex_unlock(&log_mutex);
+  // print to stdout
+  vfprintf (stdout, format, args);
+  va_end (args);
 
-	// return 0
-	return 0;
+  // print to a logfile
+  va_start (args, msg);
+  if (logFilePointer == NULL)
+    {
+      logFilePointer = fopen (config_getbykey ("logfile"), "a+");
+    }
+  if (logFilePointer != NULL)
+    {
+      vfprintf (logFilePointer, format, args);
+    }
+  fflush (logFilePointer);
+  va_end (args);
+
+  // free alloc format
+  free (format);
+  free (timeString);
+  // unlock mutex
+  pthread_mutex_unlock (&log_mutex);
+
+  // return 0
+  return 0;
 }

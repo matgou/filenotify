@@ -33,54 +33,66 @@
  * \fn void init_plugin()
  * \brief Initialise the plugin
  */
-void init_plugin(char *p_name, nlist_t *config_ref)
+void
+init_plugin (char *p_name, nlist_t * config_ref)
 {
-	config = nlist_dup(config_ref);
-        log_msg("DEBUG", "Init plugins : plg_notify_log(%s)", p_name);
+  config = nlist_dup (config_ref);
+  log_msg ("DEBUG", "Init plugins : plg_notify_log(%s)", p_name);
 }
 
 /**
  * \fn void terminate_plugin()
  * \brief free alloc mem
  */
-void terminate_plugin()
+void
+terminate_plugin ()
 {
-	if(config != NULL) {
-		nlist_free(config);
-		config = NULL;
-	}
+  if (config != NULL)
+    {
+      nlist_free (config);
+      config = NULL;
+    }
 }
 
 /**
  * \fn void handle_event()
  * \brief Write log from received event
  */
-void handle_event(char *p_name, directory_t *dir, char *filename, uint32_t mask)
+void
+handle_event (char *p_name, directory_t * dir, char *filename, uint32_t mask)
 {
-	char *type="";
-	/* Print event type */
-	if (mask & IN_OPEN) {
-		type="IN_OPEN";
-	}
-	if (mask & IN_CLOSE_NOWRITE) {
-		type="IN_CLOSE_NOWRITE";
-	}
-	if (mask & IN_CLOSE_WRITE) {
-		type="IN_CLOSE_WRITE";
-	}
-	if (mask & IN_DELETE) {
-		type="IN_DELETE";
-	}
-	if (mask & IN_MOVE_SELF) {
-		type="IN_MOVE_SELF";
-	}
-	if (mask & IN_MOVED_FROM) {
-		type="IN_MOVED_FROM";
-	}
-	if (mask & IN_MOVED_TO) {
-		type="IN_MOVED_TO";
-	}
+  char *type = "";
+  /* Print event type */
+  if (mask & IN_OPEN)
+    {
+      type = "IN_OPEN";
+    }
+  if (mask & IN_CLOSE_NOWRITE)
+    {
+      type = "IN_CLOSE_NOWRITE";
+    }
+  if (mask & IN_CLOSE_WRITE)
+    {
+      type = "IN_CLOSE_WRITE";
+    }
+  if (mask & IN_DELETE)
+    {
+      type = "IN_DELETE";
+    }
+  if (mask & IN_MOVE_SELF)
+    {
+      type = "IN_MOVE_SELF";
+    }
+  if (mask & IN_MOVED_FROM)
+    {
+      type = "IN_MOVED_FROM";
+    }
+  if (mask & IN_MOVED_TO)
+    {
+      type = "IN_MOVED_TO";
+    }
 
-	/* Print type of filesystem object */
-	log_msg("INFO", "[%s][%s] %s : %s/%s", p_name, type, dir->key, dir->name, filename);
+  /* Print type of filesystem object */
+  log_msg ("INFO", "[%s][%s] %s : %s/%s", p_name, type, dir->key, dir->name,
+	   filename);
 }

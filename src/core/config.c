@@ -34,14 +34,15 @@
  * \param key the key to search in config
  * \return char* value from key
  */
-char *config_getbykey(char *key)
+char *
+config_getbykey (char *key)
 {
-	nlist_t *ptr = lookup(config, key);
-	if(ptr != NULL)
-	{
-		return ptr->defn;
-	}
-	return NULL;
+  nlist_t *ptr = lookup (config, key);
+  if (ptr != NULL)
+    {
+      return ptr->defn;
+    }
+  return NULL;
 }
 
 /**
@@ -50,12 +51,13 @@ char *config_getbykey(char *key)
  * \param list the list-config to display
  */
 void
-config_displayall(nlist_t *list)
+config_displayall (nlist_t * list)
 {
-	nlist_t *np = list;
-        for(np = list; np != NULL; np = np->next) {
-		log_msg("INFO", " Config : %s=%s ", np->name, np->defn);
-	}
+  nlist_t *np = list;
+  for (np = list; np != NULL; np = np->next)
+    {
+      log_msg ("INFO", " Config : %s=%s ", np->name, np->defn);
+    }
 }
 
 /**
@@ -65,20 +67,22 @@ config_displayall(nlist_t *list)
  * \param prefix the prefix used to filter
  */
 nlist_t *
-config_getbyprefix(nlist_t *list, char *prefix)
+config_getbyprefix (nlist_t * list, char *prefix)
 {
-	nlist_t *configs = NULL;
+  nlist_t *configs = NULL;
 
-	nlist_t *np;
-        for(np = list; np != NULL; np = np->next) {
-		if(strncmp(np->name, prefix, strlen(prefix)) == 0) {
-			// calculate the new name with decal prefix
-			char *new_name=np->name + sizeof(char)*strlen(prefix);
-			configs = install(configs, new_name, np->defn);
-		}
-        }
+  nlist_t *np;
+  for (np = list; np != NULL; np = np->next)
+    {
+      if (strncmp (np->name, prefix, strlen (prefix)) == 0)
+	{
+	  // calculate the new name with decal prefix
+	  char *new_name = np->name + sizeof (char) * strlen (prefix);
+	  configs = install (configs, new_name, np->defn);
+	}
+    }
 
- 	return configs;
+  return configs;
 }
 
 /**
@@ -87,40 +91,43 @@ config_getbyprefix(nlist_t *list, char *prefix)
  * \param config_filepath a string to identify config_filepath
  * \return the nlist with value from file
  */
-nlist_t *config_loadfromfile (char *config_filepath)
+nlist_t *
+config_loadfromfile (char *config_filepath)
 {
-	nlist_t *config_ptr = NULL;
+  nlist_t *config_ptr = NULL;
 
-	FILE *config_file = NULL;
-	config_file = fopen(config_filepath,  "r");
-	char config_line[TAILLE_MAX] = "";
+  FILE *config_file = NULL;
+  config_file = fopen (config_filepath, "r");
+  char config_line[TAILLE_MAX] = "";
 
-	if (config_file == NULL) {
-		log_msg("ERROR", "Failed to open config file : %s", config_filepath);
-		return NULL;
-	}
+  if (config_file == NULL)
+    {
+      log_msg ("ERROR", "Failed to open config file : %s", config_filepath);
+      return NULL;
+    }
 
-	while (fgets(config_line, TAILLE_MAX, config_file) != NULL)
+  while (fgets (config_line, TAILLE_MAX, config_file) != NULL)
+    {
+      if (config_line[0] == '#')
 	{
-		if(config_line[0]=='#')
-		{
-			continue;
-		}
-		char end=config_line[strlen(config_line)-1];
-		if(end == '\n') {
-			config_line[strlen(config_line)-1] = '\0';
-		}
-		char *value = strchr(config_line, '=');
-		if(value != NULL)
-		{
-			value[0]='\0';
-			// on enleve le =
-			value = value+1;
-			config_ptr = install(config_ptr, config_line, value);
-		}
+	  continue;
 	}
+      char end = config_line[strlen (config_line) - 1];
+      if (end == '\n')
+	{
+	  config_line[strlen (config_line) - 1] = '\0';
+	}
+      char *value = strchr (config_line, '=');
+      if (value != NULL)
+	{
+	  value[0] = '\0';
+	  // on enleve le =
+	  value = value + 1;
+	  config_ptr = install (config_ptr, config_line, value);
+	}
+    }
 
-	fclose(config_file);
+  fclose (config_file);
 
-	return config_ptr;
+  return config_ptr;
 }
