@@ -230,8 +230,6 @@ void engine_handleevents(int engine_fd)
 			log_msg("DEBUG", "event from directory %s", dir->name);
 
 			filenotify_execplugins(dir, event);
-			// free
-			free(event->event_filename);
 		}
 	}
 }
