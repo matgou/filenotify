@@ -196,8 +196,8 @@ void handle_event(char *p_name, plugin_arg_t * event)
 	    install(log_args, "{{ extra_post_data }}",
 		    extra_post_data_config);
 
-	data =
-	    tools_str_from_template(config_getbykey(config_cmd), log_args);
+	char *data =
+	    tools_str_from_template(config_getbykey(config_data), log_args);
 
 	log_msg("DEBUG", "POST %s, data: %s", config_getbykey(config_url),
 		data);
