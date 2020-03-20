@@ -28,8 +28,6 @@
 #include <plg_notify.h>
 #include <stdlib.h>
 #include <config.h>
-#include <sys/stat.h>
-#include <time.h>
 #include <log.h>
 #include <tools.h>
 
@@ -65,15 +63,18 @@ terminate_plugin ()
 void
 handle_event (char *p_name, plugin_arg_t *event)
 {
-  directory_t * dir = event->dir;
-  char *filename = event->event_filename;
-  uint32_t mask = event->event_mask;
-  char *ctime_str = tools_ctime_from_stat(event->event_filestat);
-  const char *type = tools_str_from_mask(mask);
-
-  /* Print type of filesystem object */
-  log_msg ("INFO", "[%s][%s] %s : %s/%s (ctime=%s)", p_name, type, dir->key, dir->name,
-	   filename, ctime_str);
-
-  free(ctime_str);
+  // build args
+  nlist_t *log_args = tools_nlist_from_plugin_arg(event);
+  log_args = install(log_args, "{{ nom_plugin }}", p_name);
+  
+  // format string from template
+  char *template = "[{{ nom_plugin }}][{{ event_type }}] {{ directory_id }} : {{ dirname }}/{{ filename }} (ctime={{ file_ctime }})";
+  char *msg = tools_str_from_template(template, log_args);
+  
+  // print
+  log_msg ("INFO", msg);
+  
+  // free
+  nlist_free(log_args);
+  free(msg);
 }

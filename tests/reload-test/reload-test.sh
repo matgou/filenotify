@@ -90,6 +90,6 @@ then
 fi
 
 kill ${pid}
-
+cat /tmp/$( basename $0 ).log
 rm -rvf /tmp/$( basename $0 ).log ${config} /tmp/test-$( basename $0 )-1 /tmp/test-$( basename $0 )-2 /tmp/test-$( basename $0 )-3 /tmp/output-$( basename $0 ).txt
 exit $global_rc

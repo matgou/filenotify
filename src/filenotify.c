@@ -208,7 +208,9 @@ filenotify_execplugins (directory_t * dir, plugin_arg_t * event_)
       if (! (ptr->event_mask & IN_DELETE))
       {
           ptr->event_filestat = filenotify_get_filestat(dir->name, event_->event_filename);
-      }
+      } else {
+		  ptr->event_filestat=NULL;
+	  }
 
       int thread_n = increase_thread_actif ();
       ptr->pthread_n = thread_n;

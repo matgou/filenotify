@@ -28,6 +28,7 @@
 #include <plg_notify.h>
 #include <config.h>
 #include <log.h>
+#include <tools.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -67,11 +68,11 @@ handle_event (char *p_name, plugin_arg_t *event)
 {
   directory_t * dir = event->dir;
   char *filename = event->event_filename;
-  uint32_t mask = event->event_mask;
   char *extra_post_data_config = "";
   int extra_post_data_config_len = 0;
+  const char *value = tools_value_str_from_mask(event->event_mask);
 
-  if (mask & IN_ISDIR)
+  if (event->event_mask & IN_ISDIR)
     {
       return;
     }
@@ -107,37 +108,6 @@ handle_event (char *p_name, plugin_arg_t *event)
     }
 
   log_msg ("DEBUG", "handle - plg_notify_exec");
-  char *value;
-  /* Print event type */
-  value = "";
-  if (mask & IN_OPEN)
-    {
-      value = "1";
-    }
-  if (mask & IN_CLOSE_NOWRITE)
-    {
-      value = "1";
-    }
-  if (mask & IN_CLOSE_WRITE)
-    {
-      value = "1";
-    }
-  if (mask & IN_DELETE)
-    {
-      value = "0";
-    }
-  if (mask & IN_MOVE_SELF)
-    {
-      value = "1";
-    }
-  if (mask & IN_MOVED_FROM)
-    {
-      value = "0";
-    }
-  if (mask & IN_MOVED_TO)
-    {
-      value = "1";
-    }
 
   unsigned int cmd_size =
     extra_post_data_config_len + strlen (config_getbykey (config_cmd)) +
