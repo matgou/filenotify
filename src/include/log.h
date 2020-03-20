@@ -23,6 +23,6 @@
 
 FILE *logFilePointer;
 pthread_mutex_t log_mutex;
-int log_msg (char *tag, char *msg, ...);
+int log_msg(char *tag, char *msg, ...);
 
 #endif

@@ -26,21 +26,18 @@
  * \brief duplicate a nlist object
  * \return fist list element
  */
-nlist_t *
-nlist_dup (nlist_t * list)
+nlist_t *nlist_dup(nlist_t * list)
 {
-  if (list != NULL)
-    {
-      // Duplicate list element
-      nlist_t *l = malloc (sizeof (nlist_t));
-      l->name = strdup (list->name);
-      l->defn = strdup (list->defn);
-      l->next = nlist_dup (list->next);
-      return l;
+    if (list != NULL) {
+	// Duplicate list element
+	nlist_t *l = malloc(sizeof(nlist_t));
+	l->name = strdup(list->name);
+	l->defn = strdup(list->defn);
+	l->next = nlist_dup(list->next);
+	return l;
     }
-
-  // If list is NULL
-  return NULL;
+    // If list is NULL
+    return NULL;
 }
 
 /**
@@ -48,23 +45,19 @@ nlist_dup (nlist_t * list)
  * \brief look for a string in nlist
  * \return list element
  */
-nlist_t *
-lookup (nlist_t * list, char *s)
+nlist_t *lookup(nlist_t * list, char *s)
 {
-  nlist_t *list_it = list;
-  for (list_it = list; list_it != NULL; list_it = list_it->next)
-    {
-      if (list_it->name == 0)
-	{
-	  continue;
+    nlist_t *list_it = list;
+    for (list_it = list; list_it != NULL; list_it = list_it->next) {
+	if (list_it->name == 0) {
+	    continue;
 	}
-      if (strcmp (s, list_it->name) == 0)
-	{
-	  return list_it;	/* found */
+	if (strcmp(s, list_it->name) == 0) {
+	    return list_it;	/* found */
 	}
     }
 
-  return NULL;			/* not found */
+    return NULL;		/* not found */
 }
 
 /**
@@ -72,56 +65,46 @@ lookup (nlist_t * list, char *s)
  * \brief install: put (name, defn) in hashtab
  * \return
  */
-nlist_t *
-install (nlist_t * list, char *name, char *defn)
+nlist_t *install(nlist_t * list, char *name, char *defn)
 {
-  nlist_t *np = NULL;
-  if ((np = lookup (list, name)) == NULL)
-    {				/* not found */
-      np = (nlist_t *) malloc (sizeof (nlist_t));
-      np->next = list;
-      if (np == NULL || (np->name = strdup (name)) == NULL)
-	{
-	  return NULL;
+    nlist_t *np = NULL;
+    if ((np = lookup(list, name)) == NULL) {	/* not found */
+	np = (nlist_t *) malloc(sizeof(nlist_t));
+	np->next = list;
+	if (np == NULL || (np->name = strdup(name)) == NULL) {
+	    return NULL;
 	}
-      if ((np->defn = strdup (defn)) == NULL)
-	{
-	  return NULL;
+	if ((np->defn = strdup(defn)) == NULL) {
+	    return NULL;
 	}
-      /* replace list main object */
+	/* replace list main object */
 
-      list = np;
-    }
-  else
-    {				/* already there */
-      free ((void *) np->defn);	/*free previous defn */
-      if ((np->defn = strdup (defn)) == NULL)
-	{
-	  return NULL;
+	list = np;
+    } else {			/* already there */
+	free((void *) np->defn);	/*free previous defn */
+	if ((np->defn = strdup(defn)) == NULL) {
+	    return NULL;
 	}
     }
 
-  return np;
+    return np;
 }
 
 /**
  * \fn void nlist_free()
  * \brief free a nlist object
  */
-void
-nlist_free (nlist_t * l)
+void nlist_free(nlist_t * l)
 {
-  // recursive
-  if (l != NULL)
-    {
-      if (l->next != NULL)
-	{
-	  nlist_free (l->next);
-	  l->next = NULL;
+    // recursive
+    if (l != NULL) {
+	if (l->next != NULL) {
+	    nlist_free(l->next);
+	    l->next = NULL;
 	}
-      // free object
-      free ((void *) l->defn);
-      free ((void *) l->name);
-      free (l);
+	// free object
+	free((void *) l->defn);
+	free((void *) l->name);
+	free(l);
     }
 }

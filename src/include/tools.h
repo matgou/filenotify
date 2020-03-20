@@ -21,10 +21,10 @@
 #include <sys/stat.h>
 #include <nlist.h>
 
-char *tools_ctime_from_stat (struct stat *fstat);
-const char *tools_str_from_mask (uint32_t mask);
+char *tools_ctime_from_stat(struct stat *fstat);
+const char *tools_str_from_mask(uint32_t mask);
 const char *tools_value_str_from_mask(uint32_t mask);
-char *tools_str_replace (char *orig, char *rep, char *with);
-char *tools_str_from_template(char *template_str, nlist_t *args);
-nlist_t *tools_nlist_from_plugin_arg(plugin_arg_t *event);
+char *tools_str_replace(char *orig, char *rep, char *with);
+char *tools_str_from_template(char *template_str, nlist_t * args);
+nlist_t *tools_nlist_from_plugin_arg(plugin_arg_t * event);
 #endif

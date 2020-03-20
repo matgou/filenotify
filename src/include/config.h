@@ -25,11 +25,11 @@
 
 nlist_t *config;
 
-nlist_t *config_loadfromfile (char *configFilePath);
-void freeconfig ();
-nlist_t *save_config(char *key, char* value);
+nlist_t *config_loadfromfile(char *configFilePath);
+void freeconfig();
+nlist_t *save_config(char *key, char *value);
 char *config_getbykey(char *key);
-void config_displayall(nlist_t *list);
-nlist_t *config_getbyprefix(nlist_t *list, char *prefix);
+void config_displayall(nlist_t * list);
+nlist_t *config_getbyprefix(nlist_t * list, char *prefix);
 
 #endif

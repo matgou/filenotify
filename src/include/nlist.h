@@ -24,15 +24,15 @@
  * \brief A object to store simple key-value list
  */
 typedef struct {
-    void *next; /*!< Ptr to the next entry of chain. */
-    char *name; /*!< key / name, string to identify the name of the parameters */
-    char *defn; /*!< The definition value */
+    void *next;			/*!< Ptr to the next entry of chain. */
+    char *name;			/*!< key / name, string to identify the name of the parameters */
+    char *defn;			/*!< The definition value */
 } nlist_t;
 
 /* Function list */
-nlist_t *nlist_dup(nlist_t *list);
-nlist_t *lookup(nlist_t *list, char *s);
-nlist_t *install(nlist_t *list, char *name, char *defn);
-void nlist_free(nlist_t *l);
+nlist_t *nlist_dup(nlist_t * list);
+nlist_t *lookup(nlist_t * list, char *s);
+nlist_t *install(nlist_t * list, char *name, char *defn);
+void nlist_free(nlist_t * l);
 
 #endif

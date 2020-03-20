@@ -33,11 +33,11 @@
  * \brief a object to store directory monitrored by filenotify
  */
 typedef struct {
-	char *name; /*!< the directory name */
-	char *key;  /*!< the directory key (in config) */
-	int wd;     /*!< the inotify descriptor */
-	int number; /*!< the number of the directory */
-	void *next; /*!< ptr to the next directory */
+    char *name;			/*!< the directory name */
+    char *key;			/*!< the directory key (in config) */
+    int wd;			/*!< the inotify descriptor */
+    int number;			/*!< the number of the directory */
+    void *next;			/*!< ptr to the next directory */
 } directory_t;
 
 /**
@@ -45,12 +45,12 @@ typedef struct {
  * \brief a object to store args to pass to plugin function handle_event
  */
 typedef struct {
-	void *plugin;
-	directory_t *dir;
-	int pthread_n;
-	unsigned int event_mask;
-	char *event_filename;
-	struct stat *event_filestat;
+    void *plugin;
+    directory_t *dir;
+    int pthread_n;
+    unsigned int event_mask;
+    char *event_filename;
+    struct stat *event_filestat;
 } plugin_arg_t;
 
 /**
@@ -58,12 +58,12 @@ typedef struct {
  * \brief a object to store plugin call after file modification
  */
 typedef struct {
-	void *next; /*!< ptr to the next plugin */
-	void *plugin; /*!< ptr to the plugin object after dlopen */
-	char *plugin_name; /*!< the plugin file name (so file) */
-        char *p_name; /*!< the plugin name from configfile */
-	void (*func_handle)(char *p_name, plugin_arg_t *event); /*!< ptr to the function to call after inotify event */
-	void (*func_terminate)(); /*!< ptr to the function to call when close plugin */
+    void *next;			/*!< ptr to the next plugin */
+    void *plugin;		/*!< ptr to the plugin object after dlopen */
+    char *plugin_name;		/*!< the plugin file name (so file) */
+    char *p_name;		/*!< the plugin name from configfile */
+    void (*func_handle)(char *p_name, plugin_arg_t * event);	/*!< ptr to the function to call after inotify event */
+    void (*func_terminate)();	/*!< ptr to the function to call when close plugin */
 } plugin_t;
 
 plugin_t *plugins_lst;
@@ -75,13 +75,13 @@ void filenotify_displaywelcome();
 void filenotify_displayhelp();
 int filenotify_mainloop();
 plugin_t *filenotify_loadplugins();
-void filenotify_execplugins(directory_t *dir, plugin_arg_t *event_);
+void filenotify_execplugins(directory_t * dir, plugin_arg_t * event_);
 void *filenotify_execplugin(void *ptrc);
 
 // To free directory list chain
-void filenotify_directory_free(directory_t *l);
+void filenotify_directory_free(directory_t * l);
 // To free plugin list chain
-void filenotify_plugins_free(plugin_t *l);
+void filenotify_plugins_free(plugin_t * l);
 void filenotify_exit(int code);
 void filenotify_sighandler(int signo);
 int increase_thread_actif();
@@ -98,38 +98,38 @@ char *filenotify_pid_filepath;
 /***********************************************************************************************/
 
 /* Supported events suitable for MASK parameter of INOTIFY_ADD_WATCH.  */
-#define IN_ACCESS         0x00000001        /* File was accessed.  */
-#define IN_MODIFY         0x00000002        /* File was modified.  */
-#define IN_ATTRIB         0x00000004        /* Metadata changed.  */
-#define IN_CLOSE_WRITE         0x00000008        /* Writtable file was closed.  */
-#define IN_CLOSE_NOWRITE 0x00000010        /* Unwrittable file closed.  */
-#define IN_CLOSE         (IN_CLOSE_WRITE | IN_CLOSE_NOWRITE) /* Close.  */
-#define IN_OPEN                 0x00000020        /* File was opened.  */
-#define IN_MOVED_FROM         0x00000040        /* File was moved from X.  */
-#define IN_MOVED_TO      0x00000080        /* File was moved to Y.  */
-#define IN_MOVE                 (IN_MOVED_FROM | IN_MOVED_TO) /* Moves.  */
-#define IN_CREATE         0x00000100        /* Subfile was created.  */
-#define IN_DELETE         0x00000200        /* Subfile was deleted.  */
-#define IN_DELETE_SELF         0x00000400        /* Self was deleted.  */
-#define IN_MOVE_SELF         0x00000800        /* Self was moved.  */
+#define IN_ACCESS         0x00000001	/* File was accessed.  */
+#define IN_MODIFY         0x00000002	/* File was modified.  */
+#define IN_ATTRIB         0x00000004	/* Metadata changed.  */
+#define IN_CLOSE_WRITE         0x00000008	/* Writtable file was closed.  */
+#define IN_CLOSE_NOWRITE 0x00000010	/* Unwrittable file closed.  */
+#define IN_CLOSE         (IN_CLOSE_WRITE | IN_CLOSE_NOWRITE)	/* Close.  */
+#define IN_OPEN                 0x00000020	/* File was opened.  */
+#define IN_MOVED_FROM         0x00000040	/* File was moved from X.  */
+#define IN_MOVED_TO      0x00000080	/* File was moved to Y.  */
+#define IN_MOVE                 (IN_MOVED_FROM | IN_MOVED_TO)	/* Moves.  */
+#define IN_CREATE         0x00000100	/* Subfile was created.  */
+#define IN_DELETE         0x00000200	/* Subfile was deleted.  */
+#define IN_DELETE_SELF         0x00000400	/* Self was deleted.  */
+#define IN_MOVE_SELF         0x00000800	/* Self was moved.  */
 
 /* Events sent by the kernel.  */
-#define IN_UNMOUNT         0x00002000        /* Backing fs was unmounted.  */
-#define IN_Q_OVERFLOW         0x00004000        /* Event queued overflowed.  */
-#define IN_IGNORED         0x00008000        /* File was ignored.  */
+#define IN_UNMOUNT         0x00002000	/* Backing fs was unmounted.  */
+#define IN_Q_OVERFLOW         0x00004000	/* Event queued overflowed.  */
+#define IN_IGNORED         0x00008000	/* File was ignored.  */
 
 /* Helper events.  */
-#define IN_CLOSE         (IN_CLOSE_WRITE | IN_CLOSE_NOWRITE)        /* Close.  */
-#define IN_MOVE                 (IN_MOVED_FROM | IN_MOVED_TO)                /* Moves.  */
+#define IN_CLOSE         (IN_CLOSE_WRITE | IN_CLOSE_NOWRITE)	/* Close.  */
+#define IN_MOVE                 (IN_MOVED_FROM | IN_MOVED_TO)	/* Moves.  */
 
 /* Special flags.  */
-#define IN_ONLYDIR         0x01000000        /* Only watch the path if it is a
-                                           directory.  */
-#define IN_DONT_FOLLOW         0x02000000        /* Do not follow a sym link.  */
-#define IN_MASK_ADD         0x20000000        /* Add to the mask of an already
-                                           existing watch.  */
-#define IN_ISDIR         0x40000000        /* Event occurred against dir.  */
-#define IN_ONESHOT         0x80000000        /* Only send event once.  */
+#define IN_ONLYDIR         0x01000000	/* Only watch the path if it is a
+					   directory.  */
+#define IN_DONT_FOLLOW         0x02000000	/* Do not follow a sym link.  */
+#define IN_MASK_ADD         0x20000000	/* Add to the mask of an already
+					   existing watch.  */
+#define IN_ISDIR         0x40000000	/* Event occurred against dir.  */
+#define IN_ONESHOT         0x80000000	/* Only send event once.  */
 
 /* All events which a program can wait on.  */
 #define IN_ALL_EVENTS         (IN_ACCESS | IN_MODIFY | IN_ATTRIB | IN_CLOSE_WRITE  \

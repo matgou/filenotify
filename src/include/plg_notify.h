@@ -23,8 +23,8 @@
 
 
 // Function list
-void init_plugin(char *p_name, nlist_t *config_ref);
-void handle_event(char *p_name, plugin_arg_t *event);
+void init_plugin(char *p_name, nlist_t * config_ref);
+void handle_event(char *p_name, plugin_arg_t * event);
 void terminate_plugin();
 
 #endif

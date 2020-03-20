@@ -35,24 +35,21 @@
  * \fn void init_plugin()
  * \brief Initialise the plugin
  */
-void
-init_plugin (char *p_name, nlist_t * config_ref)
+void init_plugin(char *p_name, nlist_t * config_ref)
 {
-  config = nlist_dup (config_ref);
-  log_msg ("DEBUG", "Init plugins : plg_notify_log(%s)", p_name);
+    config = nlist_dup(config_ref);
+    log_msg("DEBUG", "Init plugins : plg_notify_log(%s)", p_name);
 }
 
 /**
  * \fn void terminate_plugin()
  * \brief free alloc mem
  */
-void
-terminate_plugin ()
+void terminate_plugin()
 {
-  if (config != NULL)
-    {
-      nlist_free (config);
-      config = NULL;
+    if (config != NULL) {
+	nlist_free(config);
+	config = NULL;
     }
 }
 
@@ -60,21 +57,21 @@ terminate_plugin ()
  * \fn void handle_event()
  * \brief Write log from received event
  */
-void
-handle_event (char *p_name, plugin_arg_t *event)
+void handle_event(char *p_name, plugin_arg_t * event)
 {
-  // build args
-  nlist_t *log_args = tools_nlist_from_plugin_arg(event);
-  log_args = install(log_args, "{{ nom_plugin }}", p_name);
-  
-  // format string from template
-  char *template = "[{{ nom_plugin }}][{{ event_type }}] {{ directory_id }} : {{ dirname }}/{{ filename }} (ctime={{ file_ctime }})";
-  char *msg = tools_str_from_template(template, log_args);
-  
-  // print
-  log_msg ("INFO", msg);
-  
-  // free
-  nlist_free(log_args);
-  free(msg);
+    // build args
+    nlist_t *log_args = tools_nlist_from_plugin_arg(event);
+    log_args = install(log_args, "{{ nom_plugin }}", p_name);
+
+    // format string from template
+    char *template =
+	"[{{ nom_plugin }}][{{ event_type }}] {{ directory_id }} : {{ dirname }}/{{ filename }} (ctime={{ file_ctime }})";
+    char *msg = tools_str_from_template(template, log_args);
+
+    // print
+    log_msg("INFO", msg);
+
+    // free
+    nlist_free(log_args);
+    free(msg);
 }
