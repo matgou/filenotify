@@ -30,6 +30,7 @@
 #include <config.h>
 #include <log.h>
 #include <string.h>
+#include <tools.h>
 #include <stdlib.h>
 #include <curl/curl.h>
 #include <dlfcn.h>
@@ -196,8 +197,8 @@ void handle_event(char *p_name, plugin_arg_t * event)
 	    install(log_args, "{{ extra_post_data }}",
 		    extra_post_data_config);
 
-	char *data =
-	    tools_str_from_template(config_getbykey(config_data), log_args);
+        char *template = config_getbykey(config_data);
+	char *data = tools_str_from_template(template, log_args);
 
 	log_msg("DEBUG", "POST %s, data: %s", config_getbykey(config_url),
 		data);

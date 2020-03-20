@@ -228,6 +228,9 @@ void *filenotify_execplugin(void *ptrc)
     p->func_handle(p->p_name, ptr);
 
     // Exit thread
+    if(ptr->event_filestat) {
+        free(ptr->event_filestat);
+    }
     free(ptr->event_filename);
     free(ptr);
 
