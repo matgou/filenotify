@@ -66,11 +66,12 @@ terminate_plugin ()
 void
 handle_event (char *p_name, plugin_arg_t *event)
 {
+  // build args
+  nlist_t *log_args = tools_nlist_from_plugin_arg(event);
+  log_args = install(log_args, "{{ nom_plugin }}", p_name);
+  
   directory_t * dir = event->dir;
-  char *filename = event->event_filename;
   char *extra_post_data_config = "";
-  int extra_post_data_config_len = 0;
-  const char *value = tools_value_str_from_mask(event->event_mask);
 
   if (event->event_mask & IN_ISDIR)
     {
@@ -99,28 +100,25 @@ handle_event (char *p_name, plugin_arg_t *event)
   if (config_getbykey (extra_post_data))
     {
       extra_post_data_config = config_getbykey (extra_post_data);
-      extra_post_data_config_len = strlen (extra_post_data_config);
     }
   else
     {
       extra_post_data_config = "";
-      extra_post_data_config_len = 0;
     }
+  log_args = install(log_args, "{{ extra_post_data }}", extra_post_data_config);
 
   log_msg ("DEBUG", "handle - plg_notify_exec");
-
-  unsigned int cmd_size =
-    extra_post_data_config_len + strlen (config_getbykey (config_cmd)) +
-    strlen (dir->name) + strlen (filename) + strlen (value) + 1 - 2 * 3;
-  char *cmd = malloc (sizeof (char) * cmd_size);
-  sprintf (cmd, config_getbykey (config_cmd), dir->name, filename,
-	   extra_post_data_config, value);
+  // build from template
+  char *cmd = tools_str_from_template(config_getbykey (config_cmd), log_args);
   log_msg ("DEBUG", "Execute cmd: %s", cmd);
-
+  
+  // exec system
   int status = -99;
   status = system (cmd);
 
+  // free
   log_msg ("DEBUG", "Cmd return status = %i", status);
+  nlist_free(log_args);
   free (extra_post_data);
   free (config_cmd);
   free (cmd);

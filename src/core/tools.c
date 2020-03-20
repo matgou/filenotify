@@ -209,6 +209,7 @@ nlist_t *tools_nlist_from_plugin_arg(plugin_arg_t *event)
   
   char *type = (char *) tools_str_from_mask(event->event_mask);
   log_args = install(log_args, "{{ event_type }}", type);
+  log_args = install(log_args, "{{ event_type_int }}", tools_value_str_from_mask(event->event_mask));
   
   free(ctime_str);
   return log_args;

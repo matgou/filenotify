@@ -156,17 +156,19 @@ init_plugin (char *p_name, nlist_t * config_ref)
 void
 handle_event (char *p_name, plugin_arg_t *event)
 {
-  directory_t * dir = event->dir;
-  char *filename = event->event_filename;
-  uint32_t mask = event->event_mask;
-  char *extra_post_data_config = "";
-  int extra_post_data_config_len = 0;
-  CURL *curl;
-
-  if (mask & IN_ISDIR)
+  // build args
+  nlist_t *log_args = tools_nlist_from_plugin_arg(event);
+  log_args = install(log_args, "{{ nom_plugin }}", p_name);
+  
+  if (event->event_mask & IN_ISDIR)
     {
       return;
     }
+	
+  directory_t * dir = event->dir;
+  char *extra_post_data_config = "";
+  CURL *curl;
+
   if (curl_init == 0)
     {
       return;
@@ -200,59 +202,20 @@ handle_event (char *p_name, plugin_arg_t *event)
   curl = (*f_init) ();
   if (curl)
     {
-      log_msg ("DEBUG", "handle - plg_http_post");
-      char *value = "1";
-      char *data;
-      /* Print event type */
-      if (mask & IN_OPEN)
-	{
-	  value = "1";
-	}
-      if (mask & IN_CLOSE_NOWRITE)
-	{
-	  value = "1";
-	}
-      if (mask & IN_CLOSE_WRITE)
-	{
-	  value = "1";
-	}
-      if (mask & IN_DELETE)
-	{
-	  value = "0";
-	}
-      if (mask & IN_MOVE_SELF)
-	{
-	  value = "1";
-	}
-      if (mask & IN_MOVED_FROM)
-	{
-	  value = "0";
-	}
-      if (mask & IN_MOVED_TO)
-	{
-	  value = "1";
-	}
 
       if (config_getbykey (extra_post_data))
 	{
 	  extra_post_data_config = config_getbykey (extra_post_data);
-	  extra_post_data_config_len = strlen (extra_post_data_config);
 	}
       else
 	{
 	  extra_post_data_config = "";
-	  extra_post_data_config_len = 0;
 	}
+  log_args = install(log_args, "{{ extra_post_data }}", extra_post_data_config);
 
-      data =
-	malloc (sizeof (char) *
-		(extra_post_data_config_len +
-		 strlen (config_getbykey (config_data)) + strlen (dir->name) +
-		 strlen (filename) + strlen (value) + 1));
-      sprintf (data, config_getbykey (config_data), dir->name, filename,
-	       extra_post_data_config, value);
-
-      log_msg ("DEBUG", "POST %s, data: %s", config_getbykey (config_url),
+    data = tools_str_from_template(config_getbykey (config_cmd), log_args);
+  
+    log_msg ("DEBUG", "POST %s, data: %s", config_getbykey (config_url),
 	       data);
 
       (*f_setopt) (curl, CURLOPT_URL, config_getbykey (config_url));
@@ -275,6 +238,7 @@ handle_event (char *p_name, plugin_arg_t *event)
 		   (*f_strerror) (res));
 	}
       /* always cleanup */
+  nlist_free(log_args);
       free (extra_post_data);
       free (config_url);
       free (config_data);

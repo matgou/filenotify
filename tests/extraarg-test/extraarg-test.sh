@@ -21,7 +21,7 @@ plugins_dir=../../src/plugins/.libs/
 plugins.log=libplg_notify_log$plg_ext
 plugins.exec=libplg_notify_exec$plg_ext
 
-exec.cmd=echo "%s,%s,%s,%s" >> /tmp/$( basename $0 )-result.csv
+exec.cmd=echo "{{ dirname }},{{ filename }},{{ extra_post_data }},{{ event_type_int }}" >> /tmp/$( basename $0 )-result.csv
 EOF
 
 ../../src/filenotify -c ${config} -i $pidf -d
