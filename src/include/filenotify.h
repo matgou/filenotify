@@ -41,6 +41,19 @@ typedef struct {
 } directory_t;
 
 /**
+ * \struct plugin_arg_t
+ * \brief a object to store args to pass to plugin function handle_event
+ */
+typedef struct {
+	void *plugin;
+	directory_t *dir;
+	int pthread_n;
+	unsigned int event_mask;
+	char *event_filename;
+	struct stat *event_filestat;
+} plugin_arg_t;
+
+/**
  * \struct plugin_t
  * \brief a object to store plugin call after file modification
  */
@@ -49,22 +62,9 @@ typedef struct {
 	void *plugin; /*!< ptr to the plugin object after dlopen */
 	char *plugin_name; /*!< the plugin file name (so file) */
         char *p_name; /*!< the plugin name from configfile */
-	void (*func_handle)(char *p_name, directory_t *dir, char *filename, uint32_t mask); /*!< ptr to the function to call after inotify event */
+	void (*func_handle)(char *p_name, plugin_arg_t *event); /*!< ptr to the function to call after inotify event */
 	void (*func_terminate)(); /*!< ptr to the function to call when close plugin */
 } plugin_t;
-
-/**
- * \struct plugin_arg_t
- * \brief a object to store args to pass to plugin function handle_event
- */
-typedef struct {
-	plugin_t *plugin;
-	directory_t *dir;
-	int pthread_n;
-	unsigned int event_mask;
-	char *event_filename;
-} plugin_arg_t;
-
 
 plugin_t *plugins_lst;
 directory_t *directories;

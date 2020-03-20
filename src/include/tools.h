@@ -16,15 +16,11 @@
 *   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA         *
 *   02111-1307 USA.                                                           *
 ******************************************************************************/
-#ifndef plg_notify_h
-#define plg_notifyr_h
-#include <nlist.h>
-#include <filenotify.h>
+#ifndef tools_h
+#define tools_h
+#include <sys/stat.h>
 
-
-// Function list
-void init_plugin(char *p_name, nlist_t *config_ref);
-void handle_event(char *p_name, plugin_arg_t *event);
-void terminate_plugin();
+char *tools_ctime_from_stat (struct stat *fstat);
+const char *tools_str_from_mask (uint32_t mask);
 
 #endif

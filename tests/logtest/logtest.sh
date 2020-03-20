@@ -47,5 +47,7 @@ fi
 
 kill $( cat ${pid} )
 
+cat /tmp/$( basename $0 ).log
+
 rm -rvf /tmp/$( basename $0 ).log ${config} /tmp/test-$( basename $0 )-1 /tmp/test-$( basename $0 )-2
 exit $global_rc

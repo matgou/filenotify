@@ -63,8 +63,11 @@ terminate_plugin ()
  * \brief Write log from received event
  */
 void
-handle_event (char *p_name, directory_t * dir, char *filename, uint32_t mask)
+handle_event (char *p_name, plugin_arg_t *event)
 {
+  directory_t * dir = event->dir;
+  char *filename = event->event_filename;
+  uint32_t mask = event->event_mask;
   char *extra_post_data_config = "";
   int extra_post_data_config_len = 0;
 

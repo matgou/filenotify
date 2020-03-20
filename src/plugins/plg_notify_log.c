@@ -26,8 +26,12 @@
  */
 #include <filenotify.h>
 #include <plg_notify.h>
+#include <stdlib.h>
 #include <config.h>
+#include <sys/stat.h>
+#include <time.h>
 #include <log.h>
+#include <tools.h>
 
 /**
  * \fn void init_plugin()
@@ -59,40 +63,17 @@ terminate_plugin ()
  * \brief Write log from received event
  */
 void
-handle_event (char *p_name, directory_t * dir, char *filename, uint32_t mask)
+handle_event (char *p_name, plugin_arg_t *event)
 {
-  char *type = "";
-  /* Print event type */
-  if (mask & IN_OPEN)
-    {
-      type = "IN_OPEN";
-    }
-  if (mask & IN_CLOSE_NOWRITE)
-    {
-      type = "IN_CLOSE_NOWRITE";
-    }
-  if (mask & IN_CLOSE_WRITE)
-    {
-      type = "IN_CLOSE_WRITE";
-    }
-  if (mask & IN_DELETE)
-    {
-      type = "IN_DELETE";
-    }
-  if (mask & IN_MOVE_SELF)
-    {
-      type = "IN_MOVE_SELF";
-    }
-  if (mask & IN_MOVED_FROM)
-    {
-      type = "IN_MOVED_FROM";
-    }
-  if (mask & IN_MOVED_TO)
-    {
-      type = "IN_MOVED_TO";
-    }
+  directory_t * dir = event->dir;
+  char *filename = event->event_filename;
+  uint32_t mask = event->event_mask;
+  char *ctime_str = tools_ctime_from_stat(event->event_filestat);
+  const char *type = tools_str_from_mask(mask);
 
   /* Print type of filesystem object */
-  log_msg ("INFO", "[%s][%s] %s : %s/%s", p_name, type, dir->key, dir->name,
-	   filename);
+  log_msg ("INFO", "[%s][%s] %s : %s/%s (ctime=%s)", p_name, type, dir->key, dir->name,
+	   filename, ctime_str);
+
+  free(ctime_str);
 }

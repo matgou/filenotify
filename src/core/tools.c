@@ -16,15 +16,68 @@
 *   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA         *
 *   02111-1307 USA.                                                           *
 ******************************************************************************/
-#ifndef plg_notify_h
-#define plg_notifyr_h
-#include <nlist.h>
+#include <stdlib.h>
+#include <sys/stat.h>
 #include <filenotify.h>
+#include <tools.h>
+#include <stdio.h>
 
+/**
+ * \fn char *tools_ctime_from_stat (nlist_t * list)
+ * \brief return string from stat represent ctime timestamp
+ * \return string
+ */
+char *
+tools_ctime_from_stat (struct stat *fstat)
+{
+  char *ctime_str;
 
-// Function list
-void init_plugin(char *p_name, nlist_t *config_ref);
-void handle_event(char *p_name, plugin_arg_t *event);
-void terminate_plugin();
+  if(fstat != NULL) {
+      ctime_str=malloc(sizeof(char) * 255);
+      sprintf(ctime_str, "%i", fstat->st_ctime);
+  } else {
+      ctime_str=malloc(1);
+      ctime_str[0]='\0';
+  }
 
-#endif
+  return ctime_str;
+}
+
+/**
+ * \fn char *tools_str_from_mask (uint32_t mask)
+ * \brief return string from the event mask
+ * \return string
+ */
+const char *
+tools_str_from_mask (uint32_t mask)
+{
+  /* Print event type */
+  if (mask & IN_OPEN)
+    {
+      return "IN_OPEN";
+    }
+  if (mask & IN_CLOSE_NOWRITE)
+    {
+      return "IN_CLOSE_NOWRITE";
+    }
+  if (mask & IN_CLOSE_WRITE)
+    {
+      return "IN_CLOSE_WRITE";
+    }
+  if (mask & IN_DELETE)
+    {
+      return "IN_DELETE";
+    }
+  if (mask & IN_MOVE_SELF)
+    {
+      return "IN_MOVE_SELF";
+    }
+  if (mask & IN_MOVED_FROM)
+    {
+      return "IN_MOVED_FROM";
+    }
+  if (mask & IN_MOVED_TO)
+    {
+      return "IN_MOVED_TO";
+    }
+}

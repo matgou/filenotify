@@ -41,6 +41,8 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <pthread.h>
+#include <sys/stat.h>
+
 
 /**
  * Vars to store nb_thread_actif
@@ -144,6 +146,27 @@ filenotify_displaywelcome ()
 }
 
 /**
+ * \fn struct stat *filenotify_get_filestat(char *dirname, char *filename)
+ * \brief get file stat form filename
+ */
+struct stat *
+filenotify_get_filestat(char *dirname, char *filename)
+{
+	struct stat *ptr_stat = malloc(sizeof(struct stat));
+	char *fullpath = malloc(strlen(dirname) + strlen(filename) + 2);
+	// calculate full path
+	sprintf(fullpath, "%s/%s", dirname, filename);
+
+	if(lstat(fullpath, ptr_stat) != 0) {
+		log_msg("ERROR", "lstat error on (%s) : %s", fullpath, strerror(errno));
+		return NULL;
+	}
+	
+	free(fullpath);
+	return ptr_stat;
+}
+
+/**
  * \fn void filenotify_execplugins(directory *dir, const struct inotify_event *event)
  * \brief Exec plugins for an event
  */
@@ -182,6 +205,10 @@ filenotify_execplugins (directory_t * dir, plugin_arg_t * event_)
 	malloc (sizeof (char) * (strlen (event_->event_filename) + 1));
       sprintf (ptr->event_filename, "%s", event_->event_filename);
       ptr->event_mask = event_->event_mask;
+      if (! (ptr->event_mask & IN_DELETE))
+      {
+          ptr->event_filestat = filenotify_get_filestat(dir->name, event_->event_filename);
+      }
 
       int thread_n = increase_thread_actif ();
       ptr->pthread_n = thread_n;
@@ -210,7 +237,7 @@ filenotify_execplugin (void *ptrc)
   directory_t *dir = ptr->dir;
 
   // Exec plugins
-  p->func_handle (p->p_name, dir, ptr->event_filename, ptr->event_mask);
+  p->func_handle (p->p_name, ptr);
 
   // Exit thread
   free (ptr->event_filename);
