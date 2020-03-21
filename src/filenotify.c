@@ -190,9 +190,7 @@ void filenotify_execplugins(directory_t * dir, plugin_arg_t * event_)
 	plugin_arg_t *ptr = malloc(sizeof(plugin_arg_t));
 	ptr->plugin = plugins_lst_it;
 	ptr->dir = dir;
-	ptr->event_filename =
-	    malloc(sizeof(char) * (strlen(event_->event_filename) + 1));
-	sprintf(ptr->event_filename, "%s", event_->event_filename);
+	ptr->event_filename = strdup(event_->event_filename);
 	ptr->event_mask = event_->event_mask;
 	if (!(ptr->event_mask & IN_DELETE)) {
 	    ptr->event_filestat =
@@ -233,7 +231,6 @@ void *filenotify_execplugin(void *ptrc)
     if(ptr->event_filestat) {
         free(ptr->event_filestat);
     }
-    free(ptr->event_filename);
     free(ptr);
 
     decrease_thread_actif();

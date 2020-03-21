@@ -29,6 +29,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
+#include <sys/timeb.h>
 #include <pthread.h>
 
 // For thread safe
@@ -83,19 +84,23 @@ int log_msg(char *tag, char *msg, ...)
     // Parameters : 
     const char *separator = " : ";
     // Get curtime and put in in string
-    time_t curtime = time(0);
-    char *timeString = malloc(sizeof(char) * strlen(ctime(&curtime)) + 1);
-    sprintf(timeString, "%s", ctime(&curtime));
+    char timeString[30];
+    struct timeb timebuf;
+    char *now;
 
-    // remove ending \n
-    timeString[strlen(timeString) - 1] = '\0';
+    ftime( &timebuf );
+    now = ctime( &timebuf.time );
+
+    /* Note that we're cutting "now" off after 19 characters to avoid the \n
+    that ctime() appends to the formatted time string.   */
+    snprintf(timeString, 30, "%.19s", now);  // Mon Jul 05 15:58:42
 
     // Calculate the full message with concat tag, timestring, separator, message, end
     int message_len =
 	strlen(msg) + 2 + strlen(tag) + strlen(timeString) +
 	strlen(separator) * 2;
     char *format = (char *) malloc(message_len * sizeof(char));
-    sprintf(format, "%s%s%s%s%s\n", timeString, separator, tag, separator,
+    sprintf(format, "%.19s%s%s%s%s\n", timeString, separator, tag, separator,
 	    msg);
 
     // use va_list to use many args
@@ -119,7 +124,6 @@ int log_msg(char *tag, char *msg, ...)
 
     // free alloc format
     free(format);
-    free(timeString);
     // unlock mutex
     pthread_mutex_unlock(&log_mutex);
 
