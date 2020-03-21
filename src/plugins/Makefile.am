@@ -8,3 +8,8 @@ if USE_CURL
 lib_LTLIBRARIES += libplg_http_post.la
 libplg_http_post_la_SOURCES = plg_http_post.c ../core/log.c ../core/config.c ../core/nlist.c ../core/tools.c
 endif
+
+if USE_CLAMAV
+lib_LTLIBRARIES += libplg_clamav.la
+libplg_clamav_la_SOURCES = plg_clamav.c ../core/log.c ../core/config.c ../core/nlist.c ../core/tools.c
+endif

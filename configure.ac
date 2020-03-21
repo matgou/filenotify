@@ -30,6 +30,18 @@ esac],[curl=$have_curl])
 AS_IF([test x$curl = xtrue], [AC_DEFINE([USE_CURL], [1], [Compile with curl usage to detect fs change])])
 AM_CONDITIONAL([USE_CURL], [test x$curl = xtrue])
 
+# Check configure args
+AC_CHECK_HEADER("clamav.h", have_clamav=true, have_clamav=false)
+AC_ARG_ENABLE([clamav],
+[  --enable-clamav    Enable clamav],
+[case "${enableval}" in
+  yes) clamav=true ;;
+  no)  clamav=false ;;
+  *) AC_MSG_ERROR([bad value ${enableval} for --enable-clamav]) ;;
+esac],[clamav=$have_clamav])
+AS_IF([test x$clamav = xtrue], [AC_DEFINE([USE_CLAMAV], [1], [Compile with clamav usage to detect fs change])])
+AM_CONDITIONAL([USE_CLAMAV], [test x$clamav = xtrue])
+
 AC_CONFIG_FILES([Makefile src/Makefile src/plugins/Makefile tests/Makefile])
 AC_ENABLE_SHARED
 AC_DISABLE_STATIC

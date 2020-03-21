@@ -43,7 +43,7 @@
 #include <pthread.h>
 #include <sys/stat.h>
 
-#define RUNNING_ON_VALGRIND 0
+#define RUNNING_ON_VALGRIND 1
 
 
 /**
