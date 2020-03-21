@@ -4,6 +4,8 @@ AM_INIT_AUTOMAKE([foreign -Wall -Werror subdir-objects])
 AC_PROG_CC
 AC_CONFIG_HEADERS([filenotify_config.h])
 
+AM_CONDITIONAL([DEBUG_MODE], [test x$debug = xtrue])
+
 # Check configure args
 AC_CHECK_HEADER("sys/inotify.h", have_inotify=true, have_inotify=false) 
 AC_ARG_ENABLE([inotify],
