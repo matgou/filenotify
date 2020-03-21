@@ -38,7 +38,7 @@ grep -q "/tmp/test-extraarg-test.sh-1,test1-hello,metadata=test1,1" /tmp/$( base
 grep_rc=$?
 if [ "$grep_rc" != "0" ]
 then
-	echo "ERROR : ne trouve pas test1-hello dans le fichier csv."
+	echo "ERROR : ne trouve pas '/tmp/test-extraarg-test.sh-1,test1-hello,metadata=test1,1' dans le fichier csv."
 	global_rc=1
 fi
 
@@ -46,7 +46,7 @@ grep -q "/tmp/test-extraarg-test.sh-2,test2-hello,metadata=test2,1" /tmp/$( base
 grep_rc=$?
 if [ "$grep_rc" != "0" ]
 then
-        echo "ERROR : ne trouve pas test2-hello dans le fichier csv."
+        echo "ERROR : ne trouve pas /tmp/test-extraarg-test.sh-2,test2-hello,metadata=test2,1 dans le fichier csv."
         global_rc=1
 fi
 
@@ -57,7 +57,7 @@ grep -q "/tmp/test-extraarg-test.sh-1,test1-hello,metadata=test1,0" /tmp/$( base
 grep_rc=$?
 if [ "$grep_rc" != "0" ]
 then
-        echo "ERROR : ne trouve pas test1-hello dans le fichier csv."
+        echo "ERROR : ne trouve pas /tmp/test-extraarg-test.sh-1,test1-hello,metadata=test1,0 dans le fichier csv."
         global_rc=1
 fi
 
@@ -65,12 +65,14 @@ grep -q "/tmp/test-extraarg-test.sh-2,test2-hello,metadata=test2,0" /tmp/$( base
 grep_rc=$?
 if [ "$grep_rc" != "0" ]
 then
-        echo "ERROR : ne trouve pas test2-hello dans le fichier csv."
+        echo "ERROR : ne trouve pas /tmp/test-extraarg-test.sh-2,test2-hello,metadata=test2,0 dans le fichier csv."
         global_rc=1
 fi
 
 kill ${pid}
 
 cat /tmp/$( basename $0 ).log
+cat /tmp/$( basename $0 )-result.csv
+
 rm -rvf /tmp/$( basename $0 ).log ${config} /tmp/test-$( basename $0 )-1 /tmp/test-$( basename $0 )-2 /tmp/$( basename $0 )-result.csv
 exit $global_rc

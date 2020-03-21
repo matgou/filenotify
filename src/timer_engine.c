@@ -122,14 +122,13 @@ static void timer_engine_send_events()
 		&& strcmp(dir_->d_name, "..") != 0) {
 		if (timer_engine_find(dir->name, dir_->d_name) == NULL) {
 		    plugin_arg_t *event = malloc(sizeof(plugin_arg_t));
-		    //memset(event, '\0', sizeof(plugin_arg_t));
+                    memset(event->event_filename, 0, 4096 + 1);
+		    snprintf(event->event_filename, 4096, "%s", dir_->d_name);
 		    event->dir = dir;
-		    event->event_filename =
-			malloc(strlen(dir_->d_name) + 1);
-		    sprintf(event->event_filename, "%s", dir_->d_name);
 		    event->event_mask = IN_CLOSE_WRITE;
 		    event->plugin = (void *) NULL;
 		    event->pthread_n = -1;
+		    event->event_filestat=filenotify_get_filestat(dir->name, dir_->d_name);
 		    log_msg("INFO", "Presence du fichier : %s/%s",
 			    dir->name, event->event_filename);
 
@@ -226,7 +225,7 @@ void engine_handleevents(int engine_fd)
 //           the inotify file descriptor should have the same alignment as
 //           struct inotify_event. */
 //
-    char buf[4096];
+    char buf[16384];
 //      __attribute__ ((aligned(__alignof__(struct inotify_event))));
     plugin_arg_t *event;
     ssize_t len;
@@ -253,9 +252,12 @@ void engine_handleevents(int engine_fd)
 	for (ptr = buf; ptr < buf + len; ptr += sizeof(plugin_arg_t)) {
 	    event = (plugin_arg_t *) ptr;
 	    directory_t *dir = event->dir;
-	    log_msg("DEBUG", "event from directory %s", dir->name);
-
-	    filenotify_execplugins(dir, event);
+            if(dir != NULL) {
+                log_msg("DEBUG", "event from directory %s", dir->name);
+                filenotify_execplugins(dir, event);
+            } else {
+                log_msg("ERROR", "event not processed ... (bad read)");
+            }
 	}
     }
 }

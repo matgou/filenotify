@@ -49,7 +49,7 @@ typedef struct {
     directory_t *dir;
     int pthread_n;
     unsigned int event_mask;
-    char *event_filename;
+    char event_filename[4096];
     struct stat *event_filestat;
 } plugin_arg_t;
 
@@ -86,7 +86,7 @@ void filenotify_exit(int code);
 void filenotify_sighandler(int signo);
 int increase_thread_actif();
 void decrease_thread_actif();
-
+struct stat *filenotify_get_filestat(char *dirname, char *filename);
 
 // Ptr to store string of config file path
 char *filenotify_config_file;

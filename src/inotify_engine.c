@@ -52,7 +52,7 @@ void engine_handleevents(int engine_fd)
        the inotify file descriptor should have the same alignment as
        struct inotify_event. */
 
-    char buf[4096]
+    char buf[16384]
 	__attribute__((aligned(__alignof__(struct inotify_event))));
     struct inotify_event *event;
     ssize_t len;
@@ -97,13 +97,12 @@ void engine_handleevents(int engine_fd)
 	    if (dir != NULL && event->len > 0) {
 		plugin_arg_t *event_ = malloc(sizeof(plugin_arg_t));
 		event_->dir = dir;
-		event_->event_filename = strdup(event->name);
+		snprintf(event_->event_filename, 4096, "%s", event->name);
 		event_->event_mask = event->mask;
 
 		// exec plugins
 		filenotify_execplugins(dir, event_);
 
-		free(event_->event_filename);
 		free(event_);
 	    }
 	}
@@ -154,13 +153,12 @@ directory_t *engine_subscribedirectory()
 	    while ((dir_ = readdir(d)) != NULL) {
 		if (dir_->d_type != DT_DIR) {
 		    plugin_arg_t *event = malloc(sizeof(plugin_arg_t));
-		    event->event_filename = strdup(dir_->d_name);
+		    snprintf(event->event_filename, 4096, "%s", dir_->d_name);
 		    event->event_mask = IN_CLOSE_WRITE;
 		    event->dir = dir;
 		    log_msg("INFO", "Presence initiale du fichier : %s/%s",
 			    dir->name, event->event_filename);
 		    filenotify_execplugins(dir, event);
-		    free(event->event_filename);
 		    free(event);
 		}
 	    }
