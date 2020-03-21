@@ -43,6 +43,8 @@
 #include <pthread.h>
 #include <sys/stat.h>
 
+#define RUNNING_ON_VALGRIND 0
+
 
 /**
  * Vars to store nb_thread_actif
@@ -420,7 +422,7 @@ void filenotify_plugins_free(plugin_t * l)
 	}
 	log_msg("DEBUG", "Close plugin : %s", l->plugin_name);
 	l->func_terminate();
-	dlclose(l->plugin);
+	if (!RUNNING_ON_VALGRIND) dlclose(l->plugin);
 	free(l->p_name);
 	free(l->plugin_name);
 	free(l);

@@ -223,6 +223,7 @@ void handle_event(char *p_name, plugin_arg_t * event)
 	}
 	/* always cleanup */
 	nlist_free(log_args);
+	free(data);
 	free(extra_post_data);
 	free(config_url);
 	free(config_data);
