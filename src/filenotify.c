@@ -152,7 +152,8 @@ struct stat *filenotify_get_filestat(char *dirname, char *filename)
     if (lstat(fullpath, ptr_stat) != 0) {
 	log_msg("ERROR", "lstat error on (%s) : %s", fullpath,
 		strerror(errno));
-	return NULL;
+	free(ptr_stat);
+	ptr_stat=NULL;
     }
 
     free(fullpath);
