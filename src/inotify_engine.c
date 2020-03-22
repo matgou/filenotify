@@ -135,7 +135,7 @@ directory_t *engine_subscribedirectory()
 	    dir->next = dir_save;
 	    dir->wd =
 		inotify_add_watch(inotify_fd, np->defn,
-				  IN_MOVE | IN_CLOSE | IN_DELETE);
+				  IN_MOVE | IN_CLOSE_WRITE | IN_DELETE);
 	    dir->name = strdup(np->defn);
 	    dir->key = strdup(np->name);
 	    dir->number = n_watch_directories;
