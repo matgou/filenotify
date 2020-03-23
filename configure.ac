@@ -46,7 +46,8 @@ AM_CONDITIONAL([USE_CLAMAV], [test x$clamav = xtrue])
 AC_CANONICAL_HOST
 
 AH_TEMPLATE([HOST_OS], [Target OS name])
-AC_DEFINE_UNQUOTED(HOST_OS, $host_os )
+AC_DEFINE_UNQUOTED(HOST_OS, "$host_os" )
+AS_IF([test x$host_os = xlinux-gnu], [AC_DEFINE([HOST_LINUX], [1], [Compile on linux host])])
 
 AC_CONFIG_FILES([Makefile src/Makefile src/plugins/Makefile tests/Makefile])
 AC_ENABLE_SHARED
