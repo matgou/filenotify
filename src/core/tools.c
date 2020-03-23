@@ -23,6 +23,8 @@
 #include <stdio.h>
 #include <string.h>
 
+__asm__(".symver memcpy,memcpy@GLIBC_2.2.5");
+
 /**
  * \fn char *tools_ctime_from_stat (nlist_t * list)
  * \brief return string from stat represent ctime timestamp
