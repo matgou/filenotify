@@ -23,7 +23,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#define MEMCPY_HOOK_OS linux-gnu
+#if HOST_OS == MEMCPY_HOOK_OS
 __asm__(".symver memcpy,memcpy@GLIBC_2.2.5");
+#endif
 
 /**
  * \fn char *tools_ctime_from_stat (nlist_t * list)

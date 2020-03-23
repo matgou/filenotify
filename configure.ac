@@ -42,6 +42,12 @@ esac],[clamav=$have_clamav])
 AS_IF([test x$clamav = xtrue], [AC_DEFINE([USE_CLAMAV], [1], [Compile with clamav usage to detect fs change])])
 AM_CONDITIONAL([USE_CLAMAV], [test x$clamav = xtrue])
 
+# AC_CANONICAL_HOST is needed to access the 'host_os' variable    
+AC_CANONICAL_HOST
+
+AH_TEMPLATE([HOST_OS], [Target OS name])
+AC_DEFINE_UNQUOTED(HOST_OS, $host_os )
+
 AC_CONFIG_FILES([Makefile src/Makefile src/plugins/Makefile tests/Makefile])
 AC_ENABLE_SHARED
 AC_DISABLE_STATIC
