@@ -7,7 +7,7 @@ image: debian
 build:
   stage: build
   before_script:
-    - apt update && apt -y install make autoconf
+    - apt update && apt -y install make autoconf build-essential libtool
   script:
     - libtoolize
     - sh -c "automake --add-missing; autoreconf; automake --add-missing;"
